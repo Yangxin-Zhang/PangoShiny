@@ -22,11 +22,15 @@ attachment::att_amend_desc()
 ## Create a module infrastructure in R/
 golem::add_module(name = "name_of_module1", with_test = TRUE) # Name of the module
 golem::add_module(name = "name_of_module2", with_test = TRUE) # Name of the module
+golem::add_module(name = "mod_welcome_page")
+golem::add_module(name = "mod_combine_plot")
+golem::add_module(name = "mod_welcome_pangoshiny")
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*
 golem::add_fct("helpers", with_test = TRUE)
 golem::add_utils("helpers", with_test = TRUE)
+golem::add_fct("combine_plots_sidebar")
 
 ## External resources
 ## Creates .js and .css files at inst/app/www
