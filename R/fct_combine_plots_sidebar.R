@@ -5,11 +5,17 @@
 #' @return The return value, if any, from executing the function.
 #'
 #' @importFrom bslib sidebar
+#' @importFrom shiny fileInput
 #' @noRd
 combine_plots_sidebar <- function(id) {
   ns <- NS(id)
   
-  sidebar(fillable = TRUE)
+  sidebar(
+    fillable = TRUE,
+    fileInput(inputId = ns("upload_files"),
+              label = "Upload Files", 
+              multiple = TRUE)
+  )
   
 }
 
@@ -20,7 +26,7 @@ combine_plots_sidebar <- function(id) {
 #' @return The return value, if any, from executing the function.
 #'
 #' @importFrom bslib layout_columns card
-#' @importFrom shiny textInput
+#' @importFrom shiny textInput tableOutput textOutput br
 #' @noRd
 
 combine_plots_layout_columns <- function(id) {
@@ -40,7 +46,11 @@ combine_plots_layout_columns <- function(id) {
                 label = "Page Size",
                 updateOn = "blur",
                 value = "210,210",
-                placeholder = "210X210(mm)")),
+                placeholder = "210X210(mm)"),
+      br(),
+      textOutput(outputId = ns("Test_Text")),
+      br(),
+      tableOutput(outputId = ns("Test_Table"))),
     
     tags$script(
       HTML(
