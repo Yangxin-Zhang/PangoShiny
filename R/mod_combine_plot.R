@@ -47,7 +47,6 @@ mod_combine_plot_server <- function(id){
                         "name" = Upload_Files()["name"]))
     })
     
-    
     ## observeEvent
     observeEvent(eventExpr = input$upload_files,
                  handlerExpr = {
@@ -89,6 +88,14 @@ mod_combine_plot_server <- function(id){
                    }
                  })
     
+    observeEvent(eventExpr = Loaded_Subplots(),
+                 handlerExpr = {
+                   req(Loaded_Subplots())
+                   choosed_id <- Plots_Information()[,"comb_na"] %in% Loaded_Subplots()
+                   output$Chosed_Subplots_Info <-renderTable({
+                     Plots_Information()[choosed_id,]
+                   })
+                 })
     
     ## output
     output$Combined_Plot <- renderImage({
@@ -103,7 +110,7 @@ mod_combine_plot_server <- function(id){
     
     output$Test_Text <- renderText({
       req(Loaded_Subplots())
-      Loaded_Subplots()
+      class(Loaded_Subplots())
     })
     
     output$Upload_Time <- renderText({
@@ -126,6 +133,8 @@ mod_combine_plot_server <- function(id){
     })
     
     output$Add_Subplots_Button <- renderUI({NULL})
+    
+    output$Chosed_Subplots_Info <- renderTable({NULL})
     
   })
 }

@@ -72,22 +72,35 @@ combine_plots_layout_columns <- function(id) {
     fill = TRUE,
     col_widths = c(9,3),
     
-    card(id = ns("viewer_card"),
-         plotOutput(outputId = ns("Combined_Plot"),
-                    height = "auto")),
+    tabsetPanel(
+      id = ns("viewer_panel"),
+      tabPanel(title = "test",
+               card(
+                 id = ns("viewer_card"),
+                 plotOutput(
+                   outputId = ns("Combined_Plot"),
+                   height = "auto"
+                 )
+               )
+      )
+    ),
     
     card(
-      full_screen = TRUE,
-      
-      textInput(inputId = ns("page_size"),
-                label = "Page Size",
-                updateOn = "blur",
-                value = "210,210",
-                placeholder = "210X210(mm)"),
-      
-      textOutput(ns("Test_Text"))
-      
-    ),
+      id = ns("sidebar_card"),
+      card(
+        full_screen = TRUE,
+        textInput(inputId = ns("page_size"),
+                  label = "Page Size",
+                  updateOn = "blur",
+                  value = "210,210",
+                  placeholder = "210X210(mm)"),
+        
+        textOutput(ns("Test_Text"))
+      ),
+      card(
+        full_screen = TRUE,
+        tableOutput(ns("Chosed_Subplots_Info"))
+      )),
     
     tags$script(
       HTML(
