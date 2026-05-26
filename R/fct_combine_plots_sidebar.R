@@ -4,8 +4,8 @@
 #'
 #' @return The return value, if any, from executing the function.
 #'
-#' @importFrom bslib sidebar br accordion_panel accordion
-#' @importFrom shiny fileInput selectInput
+#' @importFrom bslib sidebar accordion_panel accordion
+#' @importFrom shiny fileInput selectInput br
 #' @noRd
 combine_plots_sidebar <- function(id) {
   ns <- NS(id)
@@ -40,15 +40,9 @@ combine_plots_sidebar <- function(id) {
     uiOutput(outputId = ns("Add_Subplots_Button")),
     
     card(
+      id = ns("subplots_info_table_card"),
       full_screen = TRUE,
-      accordion(
-        id = ns("file_infos_table"),
-        open = FALSE,
-        accordion_panel(
-          value = "subplots_information_table",
-          title = "Subplot Info",
-          tableOutput(outputId = ns("Subplots_Info_Table")))
-      )
+      uiOutput(ns("full_screen_subplots_info_table_card"))
     )
     
   )
@@ -88,7 +82,6 @@ combine_plots_layout_columns <- function(id) {
     card(
       id = ns("sidebar_card"),
       card(
-        full_screen = TRUE,
         textInput(inputId = ns("page_size"),
                   label = "Page Size",
                   updateOn = "blur",
@@ -97,12 +90,11 @@ combine_plots_layout_columns <- function(id) {
         
         textOutput(ns("Test_Text"))
       ),
-      card(
-        full_screen = TRUE,
-        tableOutput(ns("Chosed_Subplots_Info"))
-      ),
-      uiOutput(outputId = ns("SubPlot_Param"))
-      ),
+      br(),
+      uiOutput(outputId = ns("SubPlot_Param")),
+      br(),
+      uiOutput(outputId = ns("Chosed_Subplots_Info_Card"))
+    ),
     
     tags$script(
       HTML(
@@ -118,4 +110,41 @@ combine_plots_layout_columns <- function(id) {
         )))
   )
   
+}
+
+#' subplot_param_ui 
+#'
+#' @description A fct function
+#'
+#' @return The return value, if any, from executing the function.
+#'
+#' @importFrom bslib layout_columns card accordion accordion_panel
+#' @importFrom shiny textInput tableOutput textOutput br
+#' @noRd
+
+subplot_param_ui <- function(id,plots){
+  ns <- NS(id)
+  ui_ls <- vector("list",length = length(plots))
+  names(ui_ls) <- plots
+  
+  for (i in 1:length(plots)) {
+    ui_ls[i] <- list(
+      card(
+        id = ns(paste0(plots[i],"_param")),
+        accordion(
+          id = ns(paste0(plots[i],"_accordion")),
+          open = FALSE,
+          accordion_panel(title = plots[i],
+                          textInput(inputId = ns(paste0(plots[i],"_textinput")),
+                                    label = "",
+                                    placeholder = "t,r,b,l"),
+                          br(),
+                          actionButton(inputId = ns(paste0(plots[i],"_remove")),
+                                       label = "Remove")
+          )
+        )
+      )
+    )
+  }
+  return(tagList(ui_ls))
 }

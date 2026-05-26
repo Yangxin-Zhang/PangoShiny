@@ -11,6 +11,7 @@ License: What license is it under?
 Imports: 
     config,
     golem,
+    magrittr,
     shiny
 Encoding: UTF-8
 LazyData: true

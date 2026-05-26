@@ -34,11 +34,7 @@ mod_combine_plot_server <- function(id){
     Upload_Times <- reactiveVal(0)
     Upload_Files <- reactiveVal(NULL)
     Loaded_Subplots <- reactiveVal(NULL)
-    
-    upload_file <- reactive({
-      req(input$upload_files)
-      input$upload_files
-    })
+    Inserted_UI_Subplots <- reactiveVal(NULL)
     
     Plots_Information <- reactive({
       req(Upload_Files())
@@ -51,23 +47,29 @@ mod_combine_plot_server <- function(id){
     observeEvent(eventExpr = input$upload_files,
                  handlerExpr = {
                    if (is.null(Upload_Files())) {
-                     Upload_Files(upload_file())
+                     Upload_Files(input$upload_files)
                      Upload_Times(Upload_Times()+1)
                    } else{
-                     Upload_Files(bind_rows(Upload_Files(),upload_file()))
+                     Upload_Files(bind_rows(Upload_Files(),input$upload_files))
                      Upload_Times(Upload_Times()+1)
                    }
-                 })
-    
-    observeEvent(eventExpr = input$upload_files,
-                 handlerExpr = {
-                   req(Plots_Information())
-                   updateSelectizeInput(
-                     inputId = "choose_subplots",
-                     choices = Plots_Information()[,"comb_na"],
-                     server = FALSE,
-                     selected = NULL
-                   )
+                   
+                   if (is.null(Loaded_Subplots())) {
+                     updateSelectizeInput(
+                       inputId = "choose_subplots",
+                       choices = Plots_Information()$comb_na,
+                       server = FALSE,
+                       selected = NULL
+                     )
+                   } else {
+                     updateSelectizeInput(
+                       inputId = "choose_subplots",
+                       choices = Plots_Information()$comb_na[!Plots_Information()$comb_na %in% Loaded_Subplots()],
+                       server = FALSE,
+                       selected = NULL
+                     )
+                   }
+                   
                  })
     
     observeEvent(eventExpr = input$choose_subplots,
@@ -80,26 +82,38 @@ mod_combine_plot_server <- function(id){
     
     observeEvent(eventExpr = input$add_subplots,
                  handlerExpr = {
+                   
                    output$Add_Subplots_Button <- renderUI({NULL})
                    if (is.null(Loaded_Subplots())) {
                      Loaded_Subplots(input$choose_subplots)
                    } else {
                      Loaded_Subplots(unique(c(Loaded_Subplots(),input$choose_subplots)))
                    }
-                 })
-    
-    observeEvent(eventExpr = Loaded_Subplots(),
-                 handlerExpr = {
-                   req(Loaded_Subplots())
                    
-                   choosed_id <- Plots_Information()[,"comb_na"] %in% Loaded_Subplots()
+                   if (is.null(Inserted_UI_Subplots())) {
+                     insertUI(selector = paste0("#",ns("subplot_param")),
+                              where = "beforeEnd",
+                              ui = subplot_param_ui(id = id,plots = Loaded_Subplots()))
+                     Inserted_UI_Subplots(Loaded_Subplots())
+                   } 
+                   
+                   if (length(Loaded_Subplots()[!Loaded_Subplots() %in% Inserted_UI_Subplots()])) {
+                     insertUI(selector = paste0("#",ns("subplot_param")),
+                              where = "beforeEnd",
+                              ui = subplot_param_ui(id = id,plots = Loaded_Subplots()[!Loaded_Subplots() %in% Inserted_UI_Subplots()]))
+                     Inserted_UI_Subplots(Loaded_Subplots())
+                   }
+                   
                    output$Chosed_Subplots_Info <-renderTable({
-                     Plots_Information()[choosed_id,]
+                     Plots_Information()[(Plots_Information()$comb_na %in% Loaded_Subplots()),]
                    })
                    
-                   insertUI(selector = paste0("#",ns("subplot_param")),
-                            where = "beforeEnd",
-                            ui = textInput(inputId = ns("test"),label = "TEst"))
+                   updateSelectizeInput(
+                     inputId = "choose_subplots",
+                     choices = Plots_Information()$comb_na[!Plots_Information()$comb_na %in% Loaded_Subplots()],
+                     server = FALSE,
+                     selected = NULL
+                   )
                    
                  })
     
@@ -115,13 +129,15 @@ mod_combine_plot_server <- function(id){
     deleteFile = FALSE)
     
     output$Test_Text <- renderText({
-      req(Loaded_Subplots())
-      class(Loaded_Subplots())
+      input$subplots_info_table_card_full_screen
     })
     
     output$Upload_Time <- renderText({
-      req(Upload_Files())
-      paste("Upload Time",Upload_Times(),sep = ":")
+      if (is.null(Upload_Files())) {
+        paste("Upload Time",0,sep = ":")
+      } else {
+        paste("Upload Time",Upload_Times(),sep = ":")
+      }
     })
     
     output$Test_Table <- renderTable({
@@ -144,6 +160,35 @@ mod_combine_plot_server <- function(id){
     output$Add_Subplots_Button <- renderUI({NULL})
     
     output$Chosed_Subplots_Info <- renderTable({NULL})
+    
+    output$Chosed_Subplots_Info_Card <- renderUI({
+      req(Loaded_Subplots())
+      
+      tagList(
+        br(),
+        card(
+          id = ns("chosed_subplots_info_card"),
+          full_screen = TRUE,
+          uiOutput(outputId = ns("full_screen_chosed_subplots_info_card"))
+        )
+      )
+    })
+    
+    output$full_screen_subplots_info_table_card <- renderUI({
+      if (isTRUE(input$subplots_info_table_card_full_screen)) {
+        card_body(tableOutput(outputId = ns("Subplots_Info_Table")))
+      } else {
+        card_title("Plots Information")
+      }
+    })
+    
+    output$full_screen_chosed_subplots_info_card <- renderUI({
+      if (isTRUE(input$chosed_subplots_info_card_full_screen)) {
+        card_body(tableOutput(outputId = ns("Chosed_Subplots_Info")))
+      } else {
+        card_title("Param Information")
+      }
+    })
     
   })
 }
