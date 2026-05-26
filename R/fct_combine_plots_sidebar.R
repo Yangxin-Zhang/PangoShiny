@@ -100,7 +100,9 @@ combine_plots_layout_columns <- function(id) {
       card(
         full_screen = TRUE,
         tableOutput(ns("Chosed_Subplots_Info"))
-      )),
+      ),
+      uiOutput(outputId = ns("SubPlot_Param"))
+      ),
     
     tags$script(
       HTML(

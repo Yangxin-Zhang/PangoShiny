@@ -91,10 +91,16 @@ mod_combine_plot_server <- function(id){
     observeEvent(eventExpr = Loaded_Subplots(),
                  handlerExpr = {
                    req(Loaded_Subplots())
+                   
                    choosed_id <- Plots_Information()[,"comb_na"] %in% Loaded_Subplots()
                    output$Chosed_Subplots_Info <-renderTable({
                      Plots_Information()[choosed_id,]
                    })
+                   
+                   insertUI(selector = paste0("#",ns("subplot_param")),
+                            where = "beforeEnd",
+                            ui = textInput(inputId = ns("test"),label = "TEst"))
+                   
                  })
     
     ## output
@@ -129,7 +135,10 @@ mod_combine_plot_server <- function(id){
     })
     
     output$SubPlot_Param <- renderUI({
-      
+      card(
+        id = ns("subplot_param"),
+        card_title("Subplot Param")
+      )
     })
     
     output$Add_Subplots_Button <- renderUI({NULL})
