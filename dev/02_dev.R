@@ -31,6 +31,8 @@ golem::add_module(name = "mod_welcome_pangoshiny")
 golem::add_fct("helpers", with_test = TRUE)
 golem::add_utils("helpers", with_test = TRUE)
 golem::add_fct("combine_plots_sidebar")
+golem::add_utils("nifti")
+golem::add_utils("general_1")
 
 ## External resources
 ## Creates .js and .css files at inst/app/www
