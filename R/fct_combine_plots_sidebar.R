@@ -120,6 +120,7 @@ combine_plots_layout_columns <- function(id) {
 #'
 #' @importFrom bslib layout_columns card accordion accordion_panel
 #' @importFrom shiny textInput tableOutput textOutput br
+#' @importFrom shinyjs useShinyjs hidden
 #' @noRd
 
 subplot_param_ui <- function(id,plots){
@@ -129,21 +130,27 @@ subplot_param_ui <- function(id,plots){
   
   for (i in 1:length(plots)) {
     ui_ls[i] <- list(
-      card(
-        id = ns(paste0(plots[i],"_param")),
-        accordion(
-          id = ns(paste0(plots[i],"_accordion")),
-          open = FALSE,
-          accordion_panel(title = plots[i],
-                          textInput(inputId = ns(paste0(plots[i],"_textinput")),
-                                    label = "",
-                                    placeholder = "t,r,b,l"),
-                          br(),
-                          actionButton(inputId = ns(paste0(plots[i],"_remove")),
-                                       label = "Remove")
-          )
-        )
+      
+      tagList(
+        useShinyjs(),
+        hidden(div( id = ns(paste0(plots[i],"_param_div")),
+                  card(
+                    id = ns(paste0(plots[i],"_param")),
+                    accordion(
+                      id = ns(paste0(plots[i],"_accordion")),
+                      open = FALSE,
+                      accordion_panel(title = plots[i],
+                                      textInput(inputId = ns(paste0(plots[i],"_textinput")),
+                                                label = "",
+                                                placeholder = "t,r,b,l"),
+                                      br(),
+                                      actionButton(inputId = ns(paste0(plots[i],"_remove")),
+                                                   label = "Remove")
+                      )
+                    )
+                  )
       )
+      ))
     )
   }
   return(tagList(ui_ls))

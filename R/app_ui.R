@@ -4,6 +4,7 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @import bslib
+#' @import shinyjs
 #' @noRd
 app_ui <- function(request) {
   tagList(
