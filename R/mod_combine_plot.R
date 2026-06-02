@@ -26,12 +26,13 @@ mod_combine_plot_ui <- function(id) {
 #' @importFrom ggplot2 theme
 #' @importFrom dplyr bind_rows
 #' @importFrom shinyjs show useShinyjs hidden hide
+#' @importFrom data.table data.table
 #' @noRd 
 mod_combine_plot_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
-    ## reactive
+    ## reactiveVal
     Upload_Times <- reactiveVal(0)
     Upload_Files <- reactiveVal(NULL)
     Uploaded_Plots <- reactiveVal(NULL)
@@ -40,6 +41,7 @@ mod_combine_plot_server <- function(id){
     Add_Times <- reactiveVal(0)
     Remove_Button_Pre_State <- reactiveVal(NULL)
     Remove_Times <- reactiveVal(0)
+    Param_Info_Datatable <- reactiveVal(NULL)
     
     ## reactive
     Remove_Buttons_Clicked <- reactive({
@@ -53,13 +55,13 @@ mod_combine_plot_server <- function(id){
     
     Plots_Information <- reactive({
       req(Upload_Files())
-      cat("## Plots_Information() \n")
+      # cat("## Plots_Information() \n")
       
       plots_na <- paste("Plot",seq(nrow(Upload_Files())),sep = "_")
-      cat(plots_na,"\n")
-      cat("Update Plot_Information! \n")
-      cat("#### \n")
-      cat("\n")
+      # cat(plots_na,"\n")
+      # cat("Update Plot_Information! \n")
+      # cat("#### \n")
+      # cat("\n")
       return(data.frame("comb_na" = plots_na,
                         "name" = Upload_Files()["name"]))
       
@@ -68,24 +70,24 @@ mod_combine_plot_server <- function(id){
     Remove_Button_List <- reactive({
       req(Plots_Information())
       
-      cat("## Remove_Button_List() \n")
+      # cat("## Remove_Button_List() \n")
       remove_buttons_na <- paste(isolate(Plots_Information()$comb_na),"remove",sep = "_")
-      cat(remove_buttons_na,"\n")
+      # cat(remove_buttons_na,"\n")
       remove_buttons_ls <- c()
       for (i in 1:length(remove_buttons_na)) {
         if (is.null(input[[remove_buttons_na[i]]])) {
-          cat("invalidatelater \n")
+          # cat("invalidatelater \n")
           invalidateLater(100)
         }else{
           remove_buttons_ls <- c(remove_buttons_ls,input[[remove_buttons_na[i]]])
-          cat(input[[remove_buttons_na[i]]],"\n")
+          # cat(input[[remove_buttons_na[i]]],"\n")
         }
       }
       
-      cat(class(remove_buttons_ls),length(remove_buttons_ls),"\n")
-      cat("Update Remove_Button_List! \n")
-      cat("#### \n")
-      cat("\n")
+      # cat(class(remove_buttons_ls),length(remove_buttons_ls),"\n")
+      # cat("Update Remove_Button_List! \n")
+      # cat("#### \n")
+      # cat("\n")
       
       return(remove_buttons_ls)
     })
@@ -101,19 +103,47 @@ mod_combine_plot_server <- function(id){
     
     observe({
       
-      cat("## Update Remove_Button_Pre_State() \n")
+      # cat("## Update Remove_Button_Pre_State() \n")
       Plots_Information()
       Remove_Button_Pre_State(isolate(Remove_Button_List()))
       
       if (nrow(Plots_Information()) != length(Remove_Button_Pre_State())) {
-        cat("Refresh! \n")
+        # cat("Refresh! \n")
         invalidateLater(100)
       }
       
-      cat("#### \n")
-      cat("\n")
+      # cat("#### \n")
+      # cat("\n")
       
     })
+    
+    observeEvent(eventExpr = Plots_Information(),
+                 handlerExpr = {
+                   req(Plots_Information())
+                   cat("## Initiate Param_Info_Datatable() \n")
+                   cat(colnames(Plots_Information()),"\n")
+                   if (is.null(Param_Info_Datatable())) {
+                     param_info_df <- Plots_Information()
+                     param_info_df$plot_na <- NA
+                     param_info_df$loc_top <- NA
+                     Param_Info_Datatable(param_info_df)
+                     
+                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
+                     cat(colnames(Param_Info_Datatable()), "\n")
+                   } else {
+                     param_info_df <- Param_Info_Datatable()[!Param_Info_Datatable()["comb_na"] %in% Param_Info_Datatable()["comb_na"]]
+                     param_info_df$plot_na <- NA
+                     param_info_df$loc_top <- NA
+                     param_info_df <- bind_rows(Param_Info_Datatable(),param_info_df)
+                     Param_Info_Datatable(param_info_df)
+                     
+                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
+                     cat(colnames(Param_Info_Datatable()), "\n")
+                   }
+                   
+                   cat("#### Complete! \n")
+                 })
+    
     ## observeEvent
     observeEvent(eventExpr = Add_Subplots(),
                  handlerExpr = {
@@ -124,16 +154,16 @@ mod_combine_plot_server <- function(id){
                  handlerExpr = {
                    
                    
-                   cat("## observeEvent input$upload_files \n")
+                   # cat("## observeEvent input$upload_files \n")
                    if (Upload_Times() != 0) {
                      Uploaded_Plots(Plots_Information())
-                     cat("Upload_Times != 0 /n")
+                     # cat("Upload_Times != 0 /n")
                    }
                    
                    if (is.null(Upload_Files())) {
                      Upload_Files(input$upload_files)
                      Upload_Times(Upload_Times()+1)
-                     cat("Upload_Files():NULL -> Upload_Files()",Upload_Files()$name,"\n")
+                     # cat("Upload_Files():NULL -> Upload_Files()",Upload_Files()$name,"\n")
                    } else{
                      Upload_Files(bind_rows(Upload_Files(),input$upload_files))
                      Upload_Times(Upload_Times()+1)
@@ -155,7 +185,7 @@ mod_combine_plot_server <- function(id){
                      )
                    }
                    
-                   cat(Plots_Information()$comb_na,"\n")
+                   # cat(Plots_Information()$comb_na,"\n")
                    
                    if (Upload_Times() == 1) {
                      
@@ -170,8 +200,8 @@ mod_combine_plot_server <- function(id){
                             ui = subplot_param_ui(id = id,plots = Plots_Information()$comb_na[!Plots_Information()$comb_na %in% Uploaded_Plots()$comb_na]),
                             immediate = TRUE)
                    
-                   cat("#### \n")
-                   cat("\n")
+                   # cat("#### \n")
+                   # cat("\n")
                    
                  })
     
@@ -194,22 +224,22 @@ mod_combine_plot_server <- function(id){
                  handlerExpr = {
                    # req(Add_Times())
                    
-                   cat("## Add Subplots! \n")
+                   # cat("## Add Subplots! \n")
                    shinyjs::hide("add_subplots_button")
-                   cat("Hide Add Button! \n")
+                   # cat("Hide Add Button! \n")
                    if (is.null(Loaded_Subplots())) {
                      Loaded_Subplots(input$choose_subplots)
-                     cat("Loaded_Subplots():",Loaded_Subplots(),"\n")
-                     cat("Load the first subplot! \n")
+                     # cat("Loaded_Subplots():",Loaded_Subplots(),"\n")
+                     # cat("Load the first subplot! \n")
                    } else {
                      Loaded_Subplots(unique(c(Loaded_Subplots(),input$choose_subplots)))
-                     cat(Loaded_Subplots(),"\n")
-                     cat("Update Loaded_Subplots! \n")
+                     # cat(Loaded_Subplots(),"\n")
+                     # cat("Update Loaded_Subplots! \n")
                    }
                    
                    if (is.null(Inserted_UI_Subplots())) {
                      
-                     cat("Inserted_UI_Subplots is Null! \n")
+                     # cat("Inserted_UI_Subplots is Null! \n")
                      
                      for (i in 1:length(Loaded_Subplots())) {
                        shinyjs::show(paste(Loaded_Subplots()[i],"_param_div",sep = ""))
@@ -217,7 +247,7 @@ mod_combine_plot_server <- function(id){
                      
                      Inserted_UI_Subplots(Loaded_Subplots())
                      
-                     cat("Inserted_UI_Subplots: ",Inserted_UI_Subplots(),"\n")
+                     # cat("Inserted_UI_Subplots: ",Inserted_UI_Subplots(),"\n")
                      
                    }
                    
@@ -225,11 +255,11 @@ mod_combine_plot_server <- function(id){
                      
                      for (i in 1:length(Loaded_Subplots())) {
                        shinyjs::show(paste0(Loaded_Subplots()[i],"_param_div"))
-                       cat("Show: ",Loaded_Subplots()[i])
+                       # cat("Show: ",Loaded_Subplots()[i])
                      }
                      
                      Inserted_UI_Subplots(Loaded_Subplots())
-                     cat("Update Inserted_UI_Subplots! \n")
+                     # cat("Update Inserted_UI_Subplots! \n")
                    }
                    
                    output$Chosed_Subplots_Info <-renderTable({
@@ -243,29 +273,29 @@ mod_combine_plot_server <- function(id){
                      selected = NULL
                    )
                    
-                   cat("#### Completely! \n")
-                   cat("\n")
+                   # cat("#### Completely! \n")
+                   # cat("\n")
                  },
                  ignoreInit = FALSE)
     
     observeEvent(eventExpr = Remove_Times(),
                  handlerExpr = {
                    
-                   cat("## Observe Remove_Times() Changing! \n")
+                   # cat("## Observe Remove_Times() Changing! \n")
                    
                    if (sum(Remove_Button_Pre_State())==Remove_Times()) {
                      
-                     cat("Remove Button were not been clicked! \n")
+                     # cat("Remove Button were not been clicked! \n")
                      
                    } else {
                      
-                     cat("Remove Buttons were clicked! \n")
-
+                     # cat("Remove Buttons were clicked! \n")
+                     
                      Loaded_Subplots(Loaded_Subplots()[Loaded_Subplots() %in% Plots_Information()$comb_na[Remove_Buttons_Clicked()]])
-                     cat("Loaded_Subplots(): ",Loaded_Subplots(),"\n")
+                     # cat("Loaded_Subplots(): ",Loaded_Subplots(),"\n")
                      Inserted_UI_Subplots(Loaded_Subplots())
                      
-                     cat(paste0(Plots_Information()$comb_na[!Remove_Buttons_Clicked()],"_param_div"),"\n")
+                     # cat(paste0(Plots_Information()$comb_na[!Remove_Buttons_Clicked()],"_param_div"),"\n")
                      shinyjs::hide(paste0(Plots_Information()$comb_na[!Remove_Buttons_Clicked()],"_param_div"))
                      
                      
@@ -277,15 +307,15 @@ mod_combine_plot_server <- function(id){
                      )
                      
                      output$Chosed_Subplots_Info <-renderTable({
-                       Plots_Information()[(Plots_Information()$comb_na %in% Loaded_Subplots()),]
+                       Param_Info_Datatable()[(Param_Info_Datatable()$comb_na %in% Loaded_Subplots()),]
                      })
                      
                      Remove_Button_Pre_State(Remove_Button_List())
                      
                    }
                    
-                   cat("#### Completely! \n")
-                   cat("\n")
+                   # cat("#### Completely! \n")
+                   # cat("\n")
                    
                  })
     
@@ -321,7 +351,7 @@ mod_combine_plot_server <- function(id){
     
     output$Subplots_Info_Table <- renderTable({
       req(Plots_Information())
-      Plots_Information()
+      Param_Info_Datatable()
     })
     
     output$SubPlot_Param <- renderUI({

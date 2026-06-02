@@ -43,8 +43,16 @@ combine_plots_sidebar <- function(id) {
       id = ns("subplots_info_table_card"),
       full_screen = TRUE,
       uiOutput(ns("full_screen_subplots_info_table_card"))
-    )
+    ),
     
+    card(
+      id = ns("upload_parma_info_excel"),
+      fileInput(
+        inputId = ns("upload_param_info_files"),
+        label = "Upload Param File", 
+        multiple = FALSE
+      )
+    )
   )
   
 }

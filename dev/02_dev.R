@@ -33,6 +33,7 @@ golem::add_utils("helpers", with_test = TRUE)
 golem::add_fct("combine_plots_sidebar")
 golem::add_utils("nifti")
 golem::add_utils("general_1")
+golem::add_utils("python_utils_transcriptome")
 
 ## External resources
 ## Creates .js and .css files at inst/app/www
