@@ -47,11 +47,7 @@ combine_plots_sidebar <- function(id) {
     
     card(
       id = ns("upload_parma_info_excel"),
-      fileInput(
-        inputId = ns("upload_param_info_files"),
-        label = "Upload Param File", 
-        multiple = FALSE
-      )
+      uiOutput(ns("param_file_input"))
     )
   )
   
@@ -148,12 +144,26 @@ subplot_param_ui <- function(id,plots){
                       id = ns(paste0(plots[i],"_accordion")),
                       open = FALSE,
                       accordion_panel(title = plots[i],
-                                      textInput(inputId = ns(paste0(plots[i],"_textinput")),
-                                                label = "",
-                                                placeholder = "t,r,b,l"),
+                                      textInput(inputId = ns(paste0(plots[i],"_combine_id")),
+                                                label = "Plot ID",
+                                                placeholder = "enter the unique ID",
+                                                updateOn = "blur"),
+                                      textInput(inputId = ns(paste0(plots[i],"_group_id")),
+                                                label = "Group ID",
+                                                placeholder = "enter the group ID",
+                                                updateOn = "blur"),
+                                      textInput(inputId = ns(paste0(plots[i],"_plot_location")),
+                                                label = "Plot Location",
+                                                placeholder = "t,r,b,l",
+                                                updateOn = "blur"),
                                       br(),
-                                      actionButton(inputId = ns(paste0(plots[i],"_remove")),
-                                                   label = "Remove")
+                                      layout_columns(
+                                        actionButton(inputId = ns(paste0(plots[i],"_remove")),
+                                                     label = "Remove"),
+                                        actionButton(inputId = ns(paste0(plots[i],"_update")),
+                                                     label = "Update"),
+                                        col_widths = c(6, 6)
+                                        )
                       )
                     )
                   )

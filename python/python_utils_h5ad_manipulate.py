@@ -8,6 +8,8 @@ import warnings
 import anndata
 import arrow
 
+from python_utils_general_1 import save_anndata_as_h5ad
+
 def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
                                       Position_Matrix,
                                       File_Path):
@@ -22,12 +24,12 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     pos_mat_ext = os.path.splitext(Position_Matrix)[1].lower()
     
     if pos_mat_ext == ".csv":
-        px = pd.read_csv(Position_Matrix, index_col=0)
-        px = px.loc[adata.obs_names]
-        try:
-          adata.obsm['spatial'] = px[["array_row", "array_col"]].to_numpy()
-        except:
-          adata.obsm['spatial'] = px[["row", "col"]].to_numpy()
+      px = pd.read_csv(Position_Matrix, index_col=0)
+      px = px.loc[adata.obs_names]
+      try:
+        adata.obsm['spatial'] = px[["array_row", "array_col"]].to_numpy()
+      except:
+        adata.obsm['spatial'] = px[["row", "col"]].to_numpy()
     elif pos_mat_ext == ".parquet":       
       px = pd.read_parquet(Position_Matrix)
       try:
@@ -35,6 +37,8 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
       except:
         adata.obsm['spatial'] = px[px["barcode"].isin(adata.obs_names)][["row", "col"]].to_numpy()
 
+    adata.obs["spatial_x"] = adata.obsm['spatial'][:,0]
+    adata.obs["spatial_y"] = adata.obsm['spatial'][:,1]
     adata.var['mt'] = adata.var_names.str.startswith('mt-')
     adata.var["rp"] = adata.var_names.str.startswith(("Rpl","Rps"))
 
@@ -46,23 +50,6 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
 
     H5ad_File_Name = Expression_Matrix_H5.split("/")[-1].split(".")[0]+"."+"h5ad"
 
-    adata.obs_names = adata.obs_names.astype(object)
-    adata.var_names = adata.var_names.astype(object)
+    save_anndata_as_h5ad(adata = adata,file_na = (File_Path+"/"+H5ad_File_Name))
 
-    for col in adata.var.select_dtypes(include=['category',"str","string"]).columns:
-        adata.var[col] = adata.var[col].astype(object)
-
-    for col in adata.obs.select_dtypes(include=['category',"str","string"]).columns:
-        adata.obs[col] = adata.obs[col].astype(object)
-
-    adata.write((File_Path+"/"+H5ad_File_Name))
-
-def Read_H5ad_Python(File_Path):
-  
-  return sc.read_h5ad(File_Path,backed = "r")
-
-def Get_H5ad_obs(adata,tmp_path):
-  adata_obs = adata.obs.copy()
-  adata_obs = adata_obs.reset_index().rename(columns={'index': 'barcode'})
-  adata_obs.to_parquet(tmp_path)
 

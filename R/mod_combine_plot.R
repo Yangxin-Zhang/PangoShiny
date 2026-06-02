@@ -117,33 +117,6 @@ mod_combine_plot_server <- function(id){
       
     })
     
-    observeEvent(eventExpr = Plots_Information(),
-                 handlerExpr = {
-                   req(Plots_Information())
-                   cat("## Initiate Param_Info_Datatable() \n")
-                   cat(colnames(Plots_Information()),"\n")
-                   if (is.null(Param_Info_Datatable())) {
-                     param_info_df <- Plots_Information()
-                     param_info_df$plot_na <- NA
-                     param_info_df$loc_top <- NA
-                     Param_Info_Datatable(param_info_df)
-                     
-                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
-                     cat(colnames(Param_Info_Datatable()), "\n")
-                   } else {
-                     param_info_df <- Param_Info_Datatable()[!Param_Info_Datatable()["comb_na"] %in% Param_Info_Datatable()["comb_na"]]
-                     param_info_df$plot_na <- NA
-                     param_info_df$loc_top <- NA
-                     param_info_df <- bind_rows(Param_Info_Datatable(),param_info_df)
-                     Param_Info_Datatable(param_info_df)
-                     
-                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
-                     cat(colnames(Param_Info_Datatable()), "\n")
-                   }
-                   
-                   cat("#### Complete! \n")
-                 })
-    
     ## observeEvent
     observeEvent(eventExpr = Add_Subplots(),
                  handlerExpr = {
@@ -319,6 +292,44 @@ mod_combine_plot_server <- function(id){
                    
                  })
     
+    observeEvent(eventExpr = Plots_Information(),
+                 handlerExpr = {
+                   req(Plots_Information())
+                   cat("## Initiate Param_Info_Datatable() \n")
+                   cat(colnames(Plots_Information()),"\n")
+                   if (is.null(Param_Info_Datatable())) {
+                     param_info_df <- Plots_Information()
+                     param_info_df$plot_na <- NA
+                     param_info_df$loc_top <- NA
+                     Param_Info_Datatable(param_info_df)
+                     
+                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
+                     cat(colnames(Param_Info_Datatable()), "\n")
+                   } else {
+                     param_info_df <- Param_Info_Datatable()[!Param_Info_Datatable()["comb_na"] %in% Param_Info_Datatable()["comb_na"]]
+                     param_info_df$plot_na <- NA
+                     param_info_df$loc_top <- NA
+                     param_info_df <- bind_rows(Param_Info_Datatable(),param_info_df)
+                     Param_Info_Datatable(param_info_df)
+                     
+                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
+                     cat(colnames(Param_Info_Datatable()), "\n")
+                   }
+                   
+                   cat("#### Complete! \n")
+                 })
+    
+    observeEvent(eventExpr = input$upload_param_info_files,
+                 handlerExpr = {
+                   shinyjs::hide("param_file_input_button")
+                   shinyjs::show("lock_param_file_input")
+                 })
+    
+    observeEvent(eventExpr = input$reload_param_info_files,
+                 handlerExpr = {
+                   shinyjs::hide("lock_param_file_input")
+                   shinyjs::show("param_file_input_button")
+                 })
     ## output
     output$Combined_Plot <- renderImage({
       list(
@@ -407,6 +418,27 @@ mod_combine_plot_server <- function(id){
       } else {
         card_title("Param Information")
       }
+    })
+    
+    output$param_file_input <- renderUI({
+      
+      tagList(      
+        useShinyjs(),
+        div(
+          id = ns("param_file_input_button"),
+          fileInput(
+            inputId = ns("upload_param_info_files"),
+            label = "Upload Param File", 
+            multiple = FALSE
+          )
+        ),
+        hidden(div(
+          id = ns("lock_param_file_input"),
+          card_body(card_title("Param Is Upload")),
+          actionButton(inputId = ns("reload_param_info_files"),
+                       label = "Reload")
+        ))
+        )
     })
     
   })
