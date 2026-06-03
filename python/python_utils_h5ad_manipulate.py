@@ -8,7 +8,7 @@ import warnings
 import anndata
 import arrow
 
-from python_utils_general_1 import save_anndata_as_h5ad
+from python_utils_general_1 import save_anndata_as_h5ad,tansfer_visium_10x_spatial_matrix
 
 def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
                                       Position_Matrix,
@@ -25,6 +25,7 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     
     if pos_mat_ext == ".csv":
       px = pd.read_csv(Position_Matrix, index_col=0)
+      px = tansfer_visium_10x_spatial_matrix(sp_mt = px)
       px = px.loc[adata.obs_names]
       try:
         adata.obsm['spatial'] = px[["array_row", "array_col"]].to_numpy()
@@ -32,11 +33,14 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
         adata.obsm['spatial'] = px[["row", "col"]].to_numpy()
     elif pos_mat_ext == ".parquet":       
       px = pd.read_parquet(Position_Matrix)
+      px = tansfer_visium_10x_spatial_matrix(sp_mt = px)
       try:
         adata.obsm['spatial'] = px[px["barcode"].isin(adata.obs_names)][["array_row", "array_col"]].to_numpy()
       except:
         adata.obsm['spatial'] = px[px["barcode"].isin(adata.obs_names)][["row", "col"]].to_numpy()
-
+    
+    adata.obsm['transfered_spatial'] = px[["transfered_row", "transfered_col"]].to_numpy()
+    
     adata.obs["spatial_x"] = adata.obsm['spatial'][:,0]
     adata.obs["spatial_y"] = adata.obsm['spatial'][:,1]
     adata.var['mt'] = adata.var_names.str.startswith('mt-')

@@ -41,12 +41,19 @@ mod_combine_plot_server <- function(id){
     Add_Times <- reactiveVal(0)
     Remove_Button_Pre_State <- reactiveVal(NULL)
     Remove_Times <- reactiveVal(0)
+    Update_Button_Pre_State <- reactiveVal(NULL)
+    Update_Times <- reactiveVal(0)
     Param_Info_Datatable <- reactiveVal(NULL)
     
     ## reactive
     Remove_Buttons_Clicked <- reactive({
       req(Remove_Button_List(),Remove_Button_Pre_State())
       Remove_Button_Pre_State() == Remove_Button_List()
+    })
+    
+    Update_Buttons_Clicked <- reactive({
+      req(Update_Button_List(),Update_Button_Pre_State())
+      Update_Button_Pre_State() == Update_Button_List()
     })
     
     Chosed_Plots <- reactive({
@@ -92,6 +99,24 @@ mod_combine_plot_server <- function(id){
       return(remove_buttons_ls)
     })
     
+    Update_Button_List <- reactive({
+      
+      req(Plots_Information())
+      update_buttons_na <- paste(isolate(Plots_Information()$comb_na),"update",sep = "_")
+      
+      update_buttons_ls <- c()
+      for (i in 1:length(update_buttons_na)) {
+        if (is.null(input[[update_buttons_na[i]]])) {
+          invalidateLater(100)
+        }else{
+          update_buttons_ls <- c(update_buttons_ls,input[[update_buttons_na[i]]])
+        }
+      }
+      
+      return(update_buttons_ls)
+      
+    })
+    
     Add_Subplots <- reactive({
       input$add_subplots
     })
@@ -99,6 +124,10 @@ mod_combine_plot_server <- function(id){
     ## observe
     observe({
       Remove_Times(sum(Remove_Button_List()))
+    })
+    
+    observe({
+      Update_Times(sum(Update_Button_List()))
     })
     
     observe({
@@ -115,6 +144,17 @@ mod_combine_plot_server <- function(id){
       # cat("#### \n")
       # cat("\n")
       
+    })
+    
+    observe({
+      
+      Plots_Information()
+      Update_Button_Pre_State(isolate(Update_Button_List()))
+      
+      if (nrow(Plots_Information()) != length(Update_Button_Pre_State())) {
+        invalidateLater(100)
+      }
+
     })
     
     ## observeEvent
@@ -236,7 +276,7 @@ mod_combine_plot_server <- function(id){
                    }
                    
                    output$Chosed_Subplots_Info <-renderTable({
-                     Plots_Information()[(Plots_Information()$comb_na %in% Loaded_Subplots()),]
+                     Param_Info_Datatable()[(Param_Info_Datatable()$comb_na %in% Loaded_Subplots()),]
                    })
                    
                    updateSelectizeInput(
@@ -283,13 +323,27 @@ mod_combine_plot_server <- function(id){
                        Param_Info_Datatable()[(Param_Info_Datatable()$comb_na %in% Loaded_Subplots()),]
                      })
                      
-                     Remove_Button_Pre_State(Remove_Button_List())
+                     Remove_Button_Pre_State(isolate(Remove_Button_List()))
                      
                    }
                    
                    # cat("#### Completely! \n")
                    # cat("\n")
                    
+                 })
+    
+    observeEvent(eventExpr = Update_Times(),
+                 handlerExpr = {
+
+                   Param_Info_Datatable(update_plot_params(
+                     input = input,
+                     session = session,
+                     subplot = isolate(Plots_Information())$comb_na[!isolate(Update_Buttons_Clicked())],
+                     param_table = isolate(Param_Info_Datatable())
+                   ))
+                   
+                   Update_Button_Pre_State(isolate(Update_Button_List()))
+
                  })
     
     observeEvent(eventExpr = Plots_Information(),
@@ -300,20 +354,33 @@ mod_combine_plot_server <- function(id){
                    if (is.null(Param_Info_Datatable())) {
                      param_info_df <- Plots_Information()
                      param_info_df$plot_na <- NA
+                     param_info_df$plot_group <- NA
                      param_info_df$loc_top <- NA
+                     param_info_df$loc_bottom <- NA
+                     param_info_df$loc_left <- NA
+                     param_info_df$loc_right <-NA
                      Param_Info_Datatable(param_info_df)
                      
                      cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
                      cat(colnames(Param_Info_Datatable()), "\n")
+                     cat("init \n")
                    } else {
-                     param_info_df <- Param_Info_Datatable()[!Param_Info_Datatable()["comb_na"] %in% Param_Info_Datatable()["comb_na"]]
+                     
+                     exist_plt <- as.character(unlist(Param_Info_Datatable()["comb_na"]))
+                     new_plt <- as.character(unlist(Plots_Information()["comb_na"]))
+                     param_info_df <- Plots_Information()[!new_plt %in% exist_plt,]
+                     
                      param_info_df$plot_na <- NA
+                     param_info_df$plot_group <- NA
                      param_info_df$loc_top <- NA
+                     param_info_df$loc_bottom <- NA
+                     param_info_df$loc_left <- NA
+                     param_info_df$loc_right <-NA
                      param_info_df <- bind_rows(Param_Info_Datatable(),param_info_df)
                      Param_Info_Datatable(param_info_df)
                      
-                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
-                     cat(colnames(Param_Info_Datatable()), "\n")
+                     cat(paste((Param_Info_Datatable()["comb_na"]),collapse = " "),"\n")
+                     cat("revise \n")
                    }
                    
                    cat("#### Complete! \n")
@@ -342,9 +409,11 @@ mod_combine_plot_server <- function(id){
     deleteFile = FALSE)
     
     output$Test_Text <- renderText({
-      p1 <- paste(Remove_Button_List(),collapse = " ")
-      p2 <- paste(Remove_Button_Pre_State(),collapse = " ")
-      paste0(p1,"::",p2)
+      p1 <- paste(Update_Button_List(),collapse = " ")
+      p2 <- paste(Update_Button_Pre_State(),collapse = " ")
+      p3 <- Update_Times()
+      p4 <- paste(Update_Buttons_Clicked(),collapse = " ")
+      paste0(p1,"::",p2,"::",p3,":",p4)
     })
     
     output$Upload_Time <- renderText({
@@ -362,7 +431,7 @@ mod_combine_plot_server <- function(id){
     
     output$Subplots_Info_Table <- renderTable({
       req(Plots_Information())
-      Param_Info_Datatable()
+      Plots_Information()
     })
     
     output$SubPlot_Param <- renderUI({

@@ -173,3 +173,51 @@ subplot_param_ui <- function(id,plots){
   }
   return(tagList(ui_ls))
 }
+
+#' update_plot_params 
+#'
+#' @description A fct function
+#'
+#' @return The return value, if any, from executing the function.
+#'
+#' @noRd
+
+update_plot_params <- function(input,session,subplot,param_table){
+  ns <- session$ns
+  
+  input[[ns(paste0(subplot,"_group_id"))]]
+  input[[ns(paste0(subplot,"_plot_location"))]]
+  
+  loc_plot <- param_table$comb_na == subplot
+  
+  param_table[loc_plot,"plot_na"] <- input[[(paste0(subplot,"_combine_id"))]]
+  param_table[loc_plot,"plot_group"] <- input[[(paste0(subplot,"_group_id"))]]
+  
+  plot_location <- strsplit(input[[(paste0(subplot,"_plot_location"))]],split = ",")
+  plot_location <- plot_location[[1]]
+  
+  if (length(plot_location) == 4) {
+    
+    param_table[loc_plot,"loc_top"] <- plot_location[1] %>%
+      as.integer()
+    param_table[loc_plot,"loc_left"] <- plot_location[2] %>%
+      as.integer()  
+    param_table[loc_plot,"loc_bottom"] <- plot_location[3] %>%
+      as.integer()
+    param_table[loc_plot,"loc_right"] <- plot_location[4] %>%
+      as.integer()
+    
+  }
+
+  cat("update_plot_params: ",param_table[loc_plot,"plot_na"],"\n")
+  
+  return(param_table)
+  
+}
+
+
+
+
+
+
+
