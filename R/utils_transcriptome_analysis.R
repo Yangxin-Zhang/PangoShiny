@@ -62,8 +62,32 @@ transcriptome_analysis_main_panel <- function(id){
     fill = TRUE,
     col_widths = c(11,1),
     
-    navset_card_tab(
+    div(
       tags$head(
+        tags$style(
+          HTML(
+            "
+          .nav-tabs .nav-link 
+          {
+          font-family: Georgia;
+          border: 2px solid #ddd !important;
+          border-color: #2c3e50 !important;
+          border-radius: 4px 4px 0 0 !important; 
+          border-bottom: none !important;
+          color: #4a4a4a !important;
+          margin-right: 35px !important;
+          font-size: 16px !important;
+          padding: 6px 2px !important;
+          text-decoration: none !important;
+          }
+          
+          .card-header
+          {
+          border-bottom: 2px solid #000000 !important;
+          }
+          "
+          )
+        ),
         tags$script(
           HTML(
             "
@@ -87,22 +111,25 @@ transcriptome_analysis_main_panel <- function(id){
           )
         )
       ),
-      nav_panel(
-        "Panel 1",
-        card(
-          id = ns("viewer_card_1"),
-          fill = TRUE,
-          girafeOutput(outputId = ns("Point_Graph"),
-                       height = "100%",
-                       width = "100%"),
-          tags$script(HTML(sprintf("makeCardSquare('%s');", ns("viewer_card_1"))))
-        )
-      ),
-      nav_panel(
-        "Panel 2",
-        card(
-          id = ns("viewer_card_2"),
-          fill = TRUE
+      navset_card_tab(
+        id = ("viewer_card_nav_tab"),
+        nav_panel(
+          "Panel 1",
+          card(
+            id = ns("viewer_card_1"),
+            fill = TRUE,
+            girafeOutput(outputId = ns("Point_Graph"),
+                         height = "100%",
+                         width = "100%"),
+            tags$script(HTML(sprintf("makeCardSquare('%s');", ns("viewer_card_1"))))
+          )
+        ),
+        nav_panel(
+          "Panel 2",
+          card(
+            id = ns("viewer_card_2"),
+            fill = TRUE
+          )
         )
       )
     )

@@ -16,12 +16,13 @@ transcriptome_point_plot <- function(plt_dt){
   #                      "spatial_y" = c(1:10))
   pt_plt <- ggplot() +
     geom_point_interactive(data = plt_dt,
-               mapping = aes(x = spatial_x,
-                             y = spatial_y,
-                             colour = leiden,
-                             data_id = barcode,
-                             tooltip = barcode),
-               size = 1)+
+                           mapping = aes(x = -transfered_spatial_x,
+                                         y = transfered_spatial_y,
+                                         colour = leiden,
+                                         data_id = barcode,
+                                         tooltip = barcode),
+                           size = 1)+
+    coord_cartesian(ratio = 1) +
     theme(panel.background = element_rect(colour = "grey90",
                                           fill = "white"),
           plot.background = element_rect(colour = "white",
@@ -34,5 +35,36 @@ transcriptome_point_plot <- function(plt_dt){
           axis.ticks.y = element_blank())
   
   return(pt_plt)
+  
+}
+
+#' transcriptome_tile_plot
+#'
+#' @description A utils function
+#'
+#' @return The return value, if any, from executing the utility.
+#'
+#' @import ggplot2
+#' @import ggiraph
+#' @noRd
+
+transcriptome_tile_plot() <- function(plt_dt){
+  
+  tl_plt <- ggplot() +
+    geom_tile_interactive(data = plt_dt,
+                          mapping = aes()) +
+    coord_cartesian(ratio = 1) +
+    theme(panel.background = element_rect(colour = "grey90",
+                                          fill = "white"),
+          plot.background = element_rect(colour = "white",
+                                         fill = "white"),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.ticks.y = element_blank())
+  
+  return(tl_plt)
   
 }

@@ -43,6 +43,8 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     
     adata.obs["spatial_x"] = adata.obsm['spatial'][:,0]
     adata.obs["spatial_y"] = adata.obsm['spatial'][:,1]
+    adata.obs["transfered_spatial_x"] = adata.obsm['transfered_spatial'][:,0]
+    adata.obs["transfered_spatial_y"] = adata.obsm['transfered_spatial'][:,1]
     adata.var['mt'] = adata.var_names.str.startswith('mt-')
     adata.var["rp"] = adata.var_names.str.startswith(("Rpl","Rps"))
 

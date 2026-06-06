@@ -53,6 +53,9 @@ def tansfer_visium_10x_spatial_matrix(sp_mt):
           
     sp_mt["transfered_row"] = sp_mt["array_row"]
     sp_mt["transfered_col"] = sp_mt["transfered_col"] - 1
+    sp_mt["transfered_row"] = sp_mt["transfered_row"].astype("int64")
+    sp_mt["transfered_col"] = sp_mt["transfered_col"].astype("int64")
+    
   except:
     for i in range(max(sp_mt["row"])+1):
       r = sp_mt["row"] == i
@@ -64,8 +67,8 @@ def tansfer_visium_10x_spatial_matrix(sp_mt):
           
     sp_mt["transfered_row"] = sp_mt["row"]
     sp_mt["transfered_col"] = sp_mt["transfered_col"] - 1
-    sp_mt["transfered_row"] = sp_mt["transfered_row"].astype('Int64')
-    sp_mt["transfered_col"] = sp_mt["transfered_col"].astype('Int64')
+    sp_mt["transfered_row"] = sp_mt["transfered_row"].astype("int64")
+    sp_mt["transfered_col"] = sp_mt["transfered_col"].astype("int64")
 
   return sp_mt
 
