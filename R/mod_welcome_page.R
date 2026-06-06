@@ -90,7 +90,14 @@ mod_welcome_page_ui <- function(id) {
           ),
           value = "CobPlt",
           mod_combine_plot_ui(id = "combine_plot")),
-        nav_panel("子页面2", "内容2")
+        nav_panel(
+          title = tags$span(
+          "Transcriptome", 
+          tags$br(), 
+          "Analysis"
+        ),
+        value = "TcAl",
+        mod_transcriptome_analysis_ui(id = "transcriptome_analysis"))
       ),
       
       !!!nav_spacers(1)

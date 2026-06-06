@@ -25,6 +25,7 @@ golem::add_module(name = "name_of_module2", with_test = TRUE) # Name of the modu
 golem::add_module(name = "mod_welcome_page")
 golem::add_module(name = "mod_combine_plot")
 golem::add_module(name = "mod_welcome_pangoshiny")
+golem::add_module(name = "mod_transcriptome_analysis")
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*
@@ -34,6 +35,8 @@ golem::add_fct("combine_plots_sidebar")
 golem::add_utils("nifti")
 golem::add_utils("general_1")
 golem::add_utils("python_utils_transcriptome")
+golem::add_utils("transcriptome_analysis")
+golem::add_utils("transcriptome_ggplot_graph")
 
 ## External resources
 ## Creates .js and .css files at inst/app/www

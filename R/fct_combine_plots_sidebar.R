@@ -72,14 +72,15 @@ combine_plots_layout_columns <- function(id) {
     
     tabsetPanel(
       id = ns("viewer_panel"),
-      tabPanel(title = "test",
-               card(
-                 id = ns("viewer_card"),
-                 plotOutput(
-                   outputId = ns("Combined_Plot"),
-                   height = "auto"
-                 )
-               )
+      tabPanel(
+        title = "test",
+        card(
+          id = ns("viewer_card"),
+          plotOutput(
+            outputId = ns("Combined_Plot"),
+            height = "auto"
+          )
+        )
       )
     ),
     
@@ -138,37 +139,37 @@ subplot_param_ui <- function(id,plots){
       tagList(
         useShinyjs(),
         hidden(div( id = ns(paste0(plots[i],"_param_div")),
-                  card(
-                    id = ns(paste0(plots[i],"_param")),
-                    accordion(
-                      id = ns(paste0(plots[i],"_accordion")),
-                      open = FALSE,
-                      accordion_panel(title = plots[i],
-                                      textInput(inputId = ns(paste0(plots[i],"_combine_id")),
-                                                label = "Plot ID",
-                                                placeholder = "enter the unique ID",
-                                                updateOn = "blur"),
-                                      textInput(inputId = ns(paste0(plots[i],"_group_id")),
-                                                label = "Group ID",
-                                                placeholder = "enter the group ID",
-                                                updateOn = "blur"),
-                                      textInput(inputId = ns(paste0(plots[i],"_plot_location")),
-                                                label = "Plot Location",
-                                                placeholder = "t,r,b,l",
-                                                updateOn = "blur"),
-                                      br(),
-                                      layout_columns(
-                                        actionButton(inputId = ns(paste0(plots[i],"_remove")),
-                                                     label = "Remove"),
-                                        actionButton(inputId = ns(paste0(plots[i],"_update")),
-                                                     label = "Update"),
-                                        col_widths = c(6, 6)
+                    card(
+                      id = ns(paste0(plots[i],"_param")),
+                      accordion(
+                        id = ns(paste0(plots[i],"_accordion")),
+                        open = FALSE,
+                        accordion_panel(title = plots[i],
+                                        textInput(inputId = ns(paste0(plots[i],"_combine_id")),
+                                                  label = "Plot ID",
+                                                  placeholder = "enter the unique ID",
+                                                  updateOn = "blur"),
+                                        textInput(inputId = ns(paste0(plots[i],"_group_id")),
+                                                  label = "Group ID",
+                                                  placeholder = "enter the group ID",
+                                                  updateOn = "blur"),
+                                        textInput(inputId = ns(paste0(plots[i],"_plot_location")),
+                                                  label = "Plot Location",
+                                                  placeholder = "t,r,b,l",
+                                                  updateOn = "blur"),
+                                        br(),
+                                        layout_columns(
+                                          actionButton(inputId = ns(paste0(plots[i],"_remove")),
+                                                       label = "Remove"),
+                                          actionButton(inputId = ns(paste0(plots[i],"_update")),
+                                                       label = "Update"),
+                                          col_widths = c(6, 6)
                                         )
+                        )
                       )
                     )
-                  )
-      )
-      ))
+        )
+        ))
     )
   }
   return(tagList(ui_ls))
@@ -208,7 +209,7 @@ update_plot_params <- function(input,session,subplot,param_table){
       as.integer()
     
   }
-
+  
   cat("update_plot_params: ",param_table[loc_plot,"plot_na"],"\n")
   
   return(param_table)

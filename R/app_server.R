@@ -5,6 +5,7 @@
 #' @import shiny
 #' @import data.table
 #' @import DT
+#' @import ggiraph
 #' @noRd
 app_server <- function(input, output, session) {
   # Your application server logic
@@ -12,5 +13,7 @@ app_server <- function(input, output, session) {
   mod_welcome_page_server(id = "welcome")
 
   mod_combine_plot_server(id = "combine_plot")
+  
+  mod_transcriptome_analysis_server(id = "transcriptome_analysis")
   
 }
