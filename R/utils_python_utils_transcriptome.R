@@ -56,9 +56,54 @@ get_h5ad_var <- function(File_Path){
   
   adata <- Anndata_Pango(H5ad_Path = File_Path)
   
-  adata_obs <- read_parquet(adata$get_anndata_var_pango_py(tmp_parquet))
+  adata_var <- read_parquet(adata$get_anndata_var_pango_py(tmp_parquet))
   
-  return(adata_obs)
+  return(adata_var)
+}
+
+#' get_h5ad_counts
+#'
+#' @description A utils function
+#'
+#' @return The return value, if any, from executing the utility.
+#'
+#' @import arrow
+#' @noRd
+
+get_h5ad_counts <- function(File_Path){
+  
+  tmp_parquet <- tempfile(fileext = ".parquet")
+  
+  adata <- Anndata_Pango(H5ad_Path = File_Path)
+  
+  adata_counts <- adata$get_anndata_counts_pango_py()
+
+  colnames(adata_counts) <- unlist(read_parquet(adata$get_anndata_gene_pango_py(tmp_parquet)))
+  rownames(adata_counts) <- unlist(read_parquet(adata$get_anndata_barcode_pango_py(tmp_parquet)))
+
+  return(adata_counts)
+  
+}
+
+#' get_h5ad_pca
+#'
+#' @description A utils function
+#'
+#' @return The return value, if any, from executing the utility.
+#'
+#' @import arrow
+#' @noRd
+
+get_h5ad_pca <- function(File_Path){
+  
+  tmp_parquet <- tempfile(fileext = ".parquet")
+  
+  adata <- Anndata_Pango(H5ad_Path = File_Path)
+  
+  adata_pca <- read_parquet(adata$get_anndata_pca_pango_py(tmp_parquet))
+  
+  return(adata_pca)
+  
 }
 
 #' conduct_analysis_pipeline
@@ -83,4 +128,39 @@ conduct_analysis_pipeline_pango <- function(File_Path,Store_Path = NULL){
   return(Store_Path)
   
 }
+
+#' create_SCE_obj
+#'
+#' @description A utils function
+#'
+#' @return The return value, if any, from executing the utility.
+#'
+#' @import SingleCellExperiment
+#' @importFrom Matrix t
+#' @noRd
+create_SCE_obj <- function(count_matrix,
+                           pca_matrix,
+                           obs_df){
+  
+  col_data <- obs_df[,c("barcode","spatial_y","spatial_x","pxl_col_in_fullres","pxl_row_in_fullres")]
+  colnames(col_data) <- c("spot.idx","array_row","array_col","pxl_row_in_fullres","pxl_col_in_fullres")
+
+  sce_obj <- SingleCellExperiment(
+    assays = list(counts = Matrix::t(count_matrix)),
+    colData = col_data)
+  # 
+  # pca_matrix <- as.data.frame(pca_matrix)
+  # rownames(pca_matrix) <- col_data$cell_id
+  # reducedDim(sce_obj, "PCA") <- pca_matrix
+  
+  # sce_obj <- SingleCellExperiment(assays = list(counts = Matrix::t(count_matrix)))
+  return(sce_obj)
+  
+}
+
+
+
+
+
+
 

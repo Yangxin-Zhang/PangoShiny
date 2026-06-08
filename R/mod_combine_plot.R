@@ -21,6 +21,7 @@ mod_combine_plot_ui <- function(id) {
 
 #' combine_plot Server Functions
 #'
+#' @import patchwork
 #' @importFrom shiny renderPlot renderImage isolate renderTable
 #' @importFrom patchwork plot_spacer
 #' @importFrom ggplot2 theme
@@ -44,6 +45,7 @@ mod_combine_plot_server <- function(id){
     Update_Button_Pre_State <- reactiveVal(NULL)
     Update_Times <- reactiveVal(0)
     Param_Info_Datatable <- reactiveVal(NULL)
+    Loaded_RAM_plots <- reactiveVal(NULL)
     
     ## reactive
     Remove_Buttons_Clicked <- reactive({
@@ -70,7 +72,9 @@ mod_combine_plot_server <- function(id){
       # cat("#### \n")
       # cat("\n")
       return(data.frame("comb_na" = plots_na,
-                        "name" = Upload_Files()["name"]))
+                        "name" = Upload_Files()["name"],
+                        "type" = Upload_Files()["type"],
+                        "datapath" = Upload_Files()["datapath"]))
       
     })
     
@@ -119,6 +123,10 @@ mod_combine_plot_server <- function(id){
     
     Add_Subplots <- reactive({
       input$add_subplots
+    })
+    
+    Combined_Plot_Main <- reactive({
+      
     })
     
     ## observe
@@ -286,6 +294,14 @@ mod_combine_plot_server <- function(id){
                      selected = NULL
                    )
                    
+                   if (is.null(Loaded_RAM_plots)) {
+                     Loaded_RAM_plots(load_plots_to_RAM(Plots_Information()[Plots_Information()$comb_na %in% Loaded_Subplots()]))
+                   }else{
+                     new_comb_na <- setdiff(Loaded_Subplots(),names(Loaded_RAM_plots()))
+                     new_RAM_plots <- load_plots_to_RAM(Plots_Information()[Plots_Information()$comb_na %in% new_comb_na])
+                     Loaded_Subplots(c(Loaded_Subplots(),new_RAM_plots))
+                   }
+                  
                    # cat("#### Completely! \n")
                    # cat("\n")
                  },
@@ -409,11 +425,10 @@ mod_combine_plot_server <- function(id){
     deleteFile = FALSE)
     
     output$Test_Text <- renderText({
-      p1 <- paste(Update_Button_List(),collapse = " ")
-      p2 <- paste(Update_Button_Pre_State(),collapse = " ")
-      p3 <- Update_Times()
-      p4 <- paste(Update_Buttons_Clicked(),collapse = " ")
-      paste0(p1,"::",p2,"::",p3,":",p4)
+      req(Upload_Files())
+      p1 <- class(Upload_Files())
+      p2 <- colnames(Upload_Files())
+      paste0(p1,"\n",p2,"\n")
     })
     
     output$Upload_Time <- renderText({

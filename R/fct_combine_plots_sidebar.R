@@ -216,9 +216,60 @@ update_plot_params <- function(input,session,subplot,param_table){
   
 }
 
+#' load_plots_to_RAM 
+#'
+#' @description A fct function
+#'
+#' @return The return value, if any, from executing the function.
+#'
+#' @import figpatch
+#' @noRd
 
+load_plots_to_RAM <- function(info_mat){
+  
+  plt_ls <- vector("list",length = nrow(info_mat))
+  plt_na <- info_mat["comb_na"] %>%
+    unlist() %>%
+    as.character()
+  names(plt_ls) <- plt_na
+  
+  for (i in 1:length(plt_na)) {
+    
+    if (info_mat[plt_na[i],"type"] == "image/png") {
+      
+      plt_ls[plt_na[i]] <- fig(info_mat[plt_na[i],"datapath"])
+      
+    }
+    
+  }
+  
+  return(plt_ls)
+  
+}
 
+#' generate_area_list 
+#'
+#' @description A fct function
+#'
+#' @return The return value, if any, from executing the function.
+#'
+#' @noRd
 
-
-
-
+generate_area_list <- function(param_info_mat){
+  
+  area_ls <- vector("list",length = nrow(param_info_mat))
+  area_na <- param_info_mat["comb_na"] %>%
+    unlist() %>%
+    as.character()
+  names(area_ls) <- area_na
+  
+  for (i in 1:length(area_na)) {
+    area_vec <- param_info_mat[area_na[i],c("loc_top","loc_left","loc_bottom","loc_right")]
+    if (!is.na(area_vec)) {
+      area_ls[area_na[i]] <- area(area_vec[1],area_vec[2],area_vec[3],area_vec[4])
+    }
+  }
+  
+  return(area_ls)
+  
+}

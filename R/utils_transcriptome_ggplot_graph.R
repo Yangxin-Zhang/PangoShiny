@@ -48,23 +48,23 @@ transcriptome_point_plot <- function(plt_dt){
 #' @import ggiraph
 #' @noRd
 
-transcriptome_tile_plot() <- function(plt_dt){
+transcriptome_tile_plot <- function(plt_dt){
   
-  tl_plt <- ggplot() +
-    geom_tile_interactive(data = plt_dt,
-                          mapping = aes()) +
-    coord_cartesian(ratio = 1) +
-    theme(panel.background = element_rect(colour = "grey90",
-                                          fill = "white"),
-          plot.background = element_rect(colour = "white",
-                                         fill = "white"),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.ticks.y = element_blank())
-  
-  return(tl_plt)
+  # tl_plt <- ggplot() +
+  #   geom_tile_interactive(data = plt_dt,
+  #                         mapping = aes()) +
+  #   coord_cartesian(ratio = 1) +
+  #   theme(panel.background = element_rect(colour = "grey90",
+  #                                         fill = "white"),
+  #         plot.background = element_rect(colour = "white",
+  #                                        fill = "white"),
+  #         axis.title.x = element_blank(),
+  #         axis.title.y = element_blank(),
+  #         axis.text.x = element_blank(),
+  #         axis.text.y = element_blank(),
+  #         axis.ticks.x = element_blank(),
+  #         axis.ticks.y = element_blank())
+  # 
+  # return(tl_plt)
   
 }

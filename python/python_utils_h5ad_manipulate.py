@@ -19,8 +19,6 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     adata = sc.read_10x_h5(Expression_Matrix_H5)
     adata.var_names_make_unique()
 
-    adata.layers["counts"] = adata.X.copy()
-    
     pos_mat_ext = os.path.splitext(Position_Matrix)[1].lower()
     
     if pos_mat_ext == ".csv":
@@ -29,6 +27,7 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
       px = px.loc[adata.obs_names]
       try:
         adata.obsm['spatial'] = px[["array_row", "array_col"]].to_numpy()
+        adata.obsm['pxl_in_fullres'] = px[["pxl_row_in_fullres","pxl_col_in_fullres"]].to_numpy()
       except:
         adata.obsm['spatial'] = px[["row", "col"]].to_numpy()
     elif pos_mat_ext == ".parquet":       
@@ -45,6 +44,8 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     adata.obs["spatial_y"] = adata.obsm['spatial'][:,1]
     adata.obs["transfered_spatial_x"] = adata.obsm['transfered_spatial'][:,0]
     adata.obs["transfered_spatial_y"] = adata.obsm['transfered_spatial'][:,1]
+    adata.obs["pxl_row_in_fullres"] = adata.obsm["pxl_in_fullres"][:,0]
+    adata.obs["pxl_col_in_fullres"] = adata.obsm["pxl_in_fullres"][:,1]
     adata.var['mt'] = adata.var_names.str.startswith('mt-')
     adata.var["rp"] = adata.var_names.str.startswith(("Rpl","Rps"))
 
@@ -53,6 +54,8 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
                                percent_top=None,
                                log1p=True,
                                inplace=True)
+                               
+    adata.layers["counts"] = adata.X.copy()
 
     H5ad_File_Name = Expression_Matrix_H5.split("/")[-1].split(".")[0]+"."+"h5ad"
 
