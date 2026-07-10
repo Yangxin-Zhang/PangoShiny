@@ -32,11 +32,8 @@ export_as_h5ad_from_10xh5 <- function(Expression_Matrix_H5,
 
 get_h5ad_obs <- function(File_Path){
   
-  tmp_parquet <- tempfile(fileext = ".parquet")
-  
-  adata <- Anndata_Pango(H5ad_Path = File_Path)
-  
-  adata_obs <- read_parquet(adata$get_anndata_obs_pango_py(tmp_parquet))
+  adata_obs <- AnnData_Pango_R(File_Path) %>%
+    H5ad_Obs_Pango()
   
   return(adata_obs)
 }
@@ -52,11 +49,8 @@ get_h5ad_obs <- function(File_Path){
 
 get_h5ad_var <- function(File_Path){
   
-  tmp_parquet <- tempfile(fileext = ".parquet")
-  
-  adata <- Anndata_Pango(H5ad_Path = File_Path)
-  
-  adata_var <- read_parquet(adata$get_anndata_var_pango_py(tmp_parquet))
+  adata_var <- AnnData_Pango_R(File_Path) %>%
+    H5ad_Var_Pango()
   
   return(adata_var)
 }
@@ -72,14 +66,8 @@ get_h5ad_var <- function(File_Path){
 
 get_h5ad_counts <- function(File_Path){
   
-  tmp_parquet <- tempfile(fileext = ".parquet")
-  
-  adata <- Anndata_Pango(H5ad_Path = File_Path)
-  
-  adata_counts <- adata$get_anndata_counts_pango_py()
-
-  colnames(adata_counts) <- unlist(read_parquet(adata$get_anndata_gene_pango_py(tmp_parquet)))
-  rownames(adata_counts) <- unlist(read_parquet(adata$get_anndata_barcode_pango_py(tmp_parquet)))
+  adata_counts <- AnnData_Pango_R(File_Path) %>%
+    H5ad_Counts_Matrix_Pango()
 
   return(adata_counts)
   
@@ -96,11 +84,8 @@ get_h5ad_counts <- function(File_Path){
 
 get_h5ad_pca <- function(File_Path){
   
-  tmp_parquet <- tempfile(fileext = ".parquet")
-  
-  adata <- Anndata_Pango(H5ad_Path = File_Path)
-  
-  adata_pca <- read_parquet(adata$get_anndata_pca_pango_py(tmp_parquet))
+  adata_pca <- AnnData_Pango_R(File_Path) %>%
+    H5ad_PCA_Pango()
   
   return(adata_pca)
   
@@ -138,9 +123,14 @@ conduct_analysis_pipeline_pango <- function(File_Path,Store_Path = NULL){
 #' @import SingleCellExperiment
 #' @importFrom Matrix t
 #' @noRd
+
 create_SCE_obj <- function(count_matrix,
                            pca_matrix,
-                           obs_df){
+                           obs_df,
+                           File_Path){
+
+  adata <- AnnData_Pango_R(h5ad_path = File_Path) %>%
+    SCE_Obj_Pango()
   
   col_data <- obs_df[,c("barcode","spatial_y","spatial_x","pxl_col_in_fullres","pxl_row_in_fullres")]
   colnames(col_data) <- c("spot.idx","array_row","array_col","pxl_row_in_fullres","pxl_col_in_fullres")

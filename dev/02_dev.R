@@ -37,6 +37,8 @@ golem::add_utils("general_1")
 golem::add_utils("python_utils_transcriptome")
 golem::add_utils("transcriptome_analysis")
 golem::add_utils("transcriptome_ggplot_graph")
+golem::add_utils("image_processing")
+golem::add_utils("spatial_enhancement")
 
 ## External resources
 ## Creates .js and .css files at inst/app/www

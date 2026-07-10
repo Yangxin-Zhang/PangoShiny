@@ -48,7 +48,10 @@ combine_plots_sidebar <- function(id) {
     card(
       id = ns("upload_parma_info_excel"),
       uiOutput(ns("param_file_input"))
-    )
+    ),
+    
+   downloadButton(outputId = ns("Download_Plots"),
+                  label = "Download") 
   )
   
 }
@@ -70,9 +73,10 @@ combine_plots_layout_columns <- function(id) {
     fill = TRUE,
     col_widths = c(9,3),
     
-    tabsetPanel(
+    div(
+      navset_card_tab(
       id = ns("viewer_panel"),
-      tabPanel(
+      nav_panel(
         title = "test",
         card(
           id = ns("viewer_card"),
@@ -82,7 +86,7 @@ combine_plots_layout_columns <- function(id) {
           )
         )
       )
-    ),
+    )),
     
     card(
       id = ns("sidebar_card"),
@@ -98,21 +102,24 @@ combine_plots_layout_columns <- function(id) {
       br(),
       uiOutput(outputId = ns("SubPlot_Param")),
       br(),
-      uiOutput(outputId = ns("Chosed_Subplots_Info_Card"))
-    ),
+      uiOutput(outputId = ns("Chosed_Subplots_Info_Card")),
+      br(),
+      actionButton(inputId = ns("refresh_main_comb_plot"),
+                   label = "Refresh")
+    )
     
-    tags$script(
-      HTML(
-        sprintf(
-          "
-    const viewer = document.getElementById('%s');
-    new ResizeObserver(entries => {
-        const w = viewer.offsetWidth;
-        viewer.style.height = w + 'px';
-    }).observe(viewer)
-  ",
-          ns("viewer_card")
-        )))
+  #   tags$script(
+  #     HTML(
+  #       sprintf(
+  #         "
+  #   const viewer = document.getElementById('%s');
+  #   new ResizeObserver(entries => {
+  #       const w = viewer.offsetWidth;
+  #       viewer.style.height = w + 'px';
+  #   }).observe(viewer)
+  # ",
+  #         ns("viewer_card")
+  #       )))
   )
   
 }
@@ -186,13 +193,23 @@ subplot_param_ui <- function(id,plots){
 update_plot_params <- function(input,session,subplot,param_table){
   ns <- session$ns
   
-  input[[ns(paste0(subplot,"_group_id"))]]
-  input[[ns(paste0(subplot,"_plot_location"))]]
-  
   loc_plot <- param_table$comb_na == subplot
   
-  param_table[loc_plot,"plot_na"] <- input[[(paste0(subplot,"_combine_id"))]]
-  param_table[loc_plot,"plot_group"] <- input[[(paste0(subplot,"_group_id"))]]
+  if (!is.na(input[[(paste0(subplot,"_combine_id"))]])) {
+    
+    param_table[loc_plot,"plot_na"] <- input[[(paste0(subplot,"_combine_id"))]]
+    
+  }else{
+    param_table[loc_plot,"plot_na"] <- NA
+  }
+  
+  if (!is.na(input[[(paste0(subplot,"_group_id"))]])) {
+    
+    param_table[loc_plot,"plot_group"] <- input[[(paste0(subplot,"_group_id"))]]
+    
+  }else{
+    param_table[loc_plot,"plot_group"] <- NA
+  }
   
   plot_location <- strsplit(input[[(paste0(subplot,"_plot_location"))]],split = ",")
   plot_location <- plot_location[[1]]
@@ -210,7 +227,7 @@ update_plot_params <- function(input,session,subplot,param_table){
     
   }
   
-  cat("update_plot_params: ",param_table[loc_plot,"plot_na"],"\n")
+  # cat("update_plot_params: ",param_table[loc_plot,"plot_na"],"\n")
   
   return(param_table)
   
@@ -233,15 +250,32 @@ load_plots_to_RAM <- function(info_mat){
     as.character()
   names(plt_ls) <- plt_na
   
+  # cat(class(plt_na),"\n")
+  # cat(plt_na[1],"\n")
+  # cat(paste0(info_mat[info_mat$comb_na %in% plt_na[1],"type"]),"\n")
+  # cat(nrow(info_mat),"\n")
+  # cat(paste0(colnames(info_mat)),"\n")
+  
   for (i in 1:length(plt_na)) {
-    
-    if (info_mat[plt_na[i],"type"] == "image/png") {
-      
-      plt_ls[plt_na[i]] <- fig(info_mat[plt_na[i],"datapath"])
-      
+
+    if (info_mat[info_mat$comb_na %in% plt_na[i],"type"] == "image/png") {
+
+      plt_ls[plt_na[i]] <- magick::image_read(info_mat[info_mat$comb_na %in% plt_na[i],"datapath"]) %>%
+        grid::rasterGrob() %>%
+        list()
+
     }
     
+    if (tools::file_ext(info_mat[info_mat$comb_na %in% plt_na[i],"datapath"]) == "rds") {
+      
+      plt_ls[plt_na[i]] <- readRDS(info_mat[info_mat$comb_na %in% plt_na[i],"datapath"]) %>%
+        list()
+      
+    }
+
   }
+  
+  # cat(class(plt_ls[[1]]),"\n")
   
   return(plt_ls)
   
@@ -257,6 +291,7 @@ load_plots_to_RAM <- function(info_mat){
 
 generate_area_list <- function(param_info_mat){
   
+  # cat("generate area list \n")
   area_ls <- vector("list",length = nrow(param_info_mat))
   area_na <- param_info_mat["comb_na"] %>%
     unlist() %>%
@@ -264,12 +299,76 @@ generate_area_list <- function(param_info_mat){
   names(area_ls) <- area_na
   
   for (i in 1:length(area_na)) {
-    area_vec <- param_info_mat[area_na[i],c("loc_top","loc_left","loc_bottom","loc_right")]
-    if (!is.na(area_vec)) {
-      area_ls[area_na[i]] <- area(area_vec[1],area_vec[2],area_vec[3],area_vec[4])
+    area_vec <- param_info_mat[param_info_mat$comb_na %in% area_na[i],c("loc_top","loc_left","loc_bottom","loc_right")] %>%
+      unlist()
+    # cat(class(area_vec),"\n")
+    # cat(length(area_vec),"\n")
+    # cat(area_vec[1],"\n")
+    # cat(paste0(is.na(area_vec)),"\n")
+    if (sum((!is.na(area_vec))) == 4) {
+      area_ls[area_na[i]] <- area(area_vec[1],area_vec[2],area_vec[3],area_vec[4]) %>%
+        list()
+    }else{
+      area_ls[area_na[i]] <- list(NULL)
+      # cat("Is null area: ",is.null(area_ls[[area_na[i]]]),"\n")
     }
   }
   
   return(area_ls)
+  
+}
+
+#' create_Background_Plot
+#'
+#' @description A fct function
+#'
+#' @return The return value, if any, from executing the function.
+#'
+#' @noRd
+
+create_Background_Plot <- function(){
+  
+  bk_plt <- ggplot(data = data.frame(x = range(0,297),
+                                     y = range(0,297)),
+                   mapping = aes(x = x,
+                                 y = y)) +
+    scale_x_continuous(breaks = seq(0,297,by = 29.7),
+                       expand = expansion(),
+                       limits = c(0,297))+
+    scale_y_continuous(breaks = seq(0,297,by = 29.7),
+                       expand = expansion(),
+                       limits = c(0,297)) +
+    theme(panel.background = element_rect(fill = "grey90",
+                                          colour = "white",
+                                          linewidth = 1),
+          plot.background = element_rect(colour = "black",
+                                         linewidth = 1),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.line.x = element_blank(),
+          axis.line.y = element_blank(),
+          aspect.ratio = 1,
+          panel.grid.minor = element_line(colour = "white",
+                                          linewidth = 0.5),
+          panel.grid.major = element_line(colour = "white",
+                                          linewidth = 0.5),
+          plot.margin = margin(0,0,0,0),
+          margins = margin(0,0,0,0))
+  
+  tmp_file <- tempfile(fileext = "_background_plot.png")
+  
+  ggsave(filename = tmp_file,
+         plot = bk_plt,
+         device = "png",
+         dpi = 300,
+         width = 297,
+         height = 297,
+         units = "mm")
+  
+  return(tmp_file)
   
 }

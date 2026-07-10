@@ -6,7 +6,9 @@ import scanpy as sc
 import os
 import warnings
 import anndata
-import arrow
+import pyarrow.parquet as pq
+
+# import rpy2.robjects as robjects
 
 from python_utils_general_1 import save_anndata_as_h5ad,tansfer_visium_10x_spatial_matrix
 
@@ -60,5 +62,12 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     H5ad_File_Name = Expression_Matrix_H5.split("/")[-1].split(".")[0]+"."+"h5ad"
 
     save_anndata_as_h5ad(adata = adata,file_na = (File_Path+"/"+H5ad_File_Name))
+    
+    return (File_Path+"/"+H5ad_File_Name)
 
+def construct_H5ad_from_sce(sce_obs,sce_pca):
+  
+  adata_obs = pq.read_table(sce_obs).to_pandas()
+  adata_pca = pq.read_table(sce_pca).to_pandas()
 
+  return

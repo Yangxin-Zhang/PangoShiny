@@ -22,7 +22,7 @@ def save_anndata_as_h5ad(adata,file_na):
   
     adata.obs_names = adata.obs_names.astype(object)
     adata.var_names = adata.var_names.astype(object)
-
+    
     for col in adata.var.select_dtypes(include=['category',"str","string"]).columns:
         adata.var[col] = adata.var[col].astype(object)
 

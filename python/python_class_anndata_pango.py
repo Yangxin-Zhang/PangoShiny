@@ -5,9 +5,10 @@ import scanpy as sc
 import pandas as pd
 
 from python_utils_general_1 import save_anndata_as_h5ad
-from python_utils_analysis_pipeline_anndata import anndata_leiden_cluster,anndata_qc_pango,anndata_pearson_residuals_pango
+from python_utils_analysis_pipeline_anndata import anndata_leiden_cluster,anndata_qc_pango,\
+anndata_pearson_residuals_pango,anndata_spatial_leiden_cluster,neighbors_construction
 
-class Anndata_Pango:
+class Anndata_Pango_Py:
     def __init__(self,H5ad_Path):
         self.h5ad_path = H5ad_Path
         self.adata_obj = sc.read_h5ad(H5ad_Path,backed="r")
@@ -68,9 +69,21 @@ class Anndata_Pango:
       
       return self
     
+    def conduct_neighbors_construction_py(self):
+      
+      self.adata_obj = neighbors_construction(adata = self.adata_obj.to_memory())
+      
+      return self
+    
     def conduct_leiden_cluster_pango_py(self):
       
       self.adata_obj = anndata_leiden_cluster(adata = self.adata_obj.to_memory())
+      
+      return self
+    
+    def conduct_spatial_leiden_cluster_pango_py(self):
+      
+      self.adata_obj = anndata_spatial_leiden_cluster(adata = self.adata_obj.to_memory())
       
       return self
     

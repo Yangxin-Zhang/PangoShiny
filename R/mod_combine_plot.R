@@ -32,6 +32,8 @@ mod_combine_plot_ui <- function(id) {
 mod_combine_plot_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
+    Background_Plot <- magick::image_read(create_Background_Plot()) %>%
+      grid::rasterGrob()
     
     ## reactiveVal
     Upload_Times <- reactiveVal(0)
@@ -46,6 +48,15 @@ mod_combine_plot_server <- function(id){
     Update_Times <- reactiveVal(0)
     Param_Info_Datatable <- reactiveVal(NULL)
     Loaded_RAM_plots <- reactiveVal(NULL)
+    Area_List <- reactiveVal(NULL)
+    Main_Plot_Path <- reactiveVal(tempfile(fileext = "_main.png"))
+    Combined_Plot_Main <- reactiveVal(wrap_plots(list("plot_spacer" = plot_spacer()),
+                                                 design = do.call(c,list("plot_spacer" = area(1,1,297,297)))))
+    Combined_Plot_Main_Show <- reactiveVal(wrap_plots(list("background_plot" = Background_Plot),
+                                                      design = do.call(c,list("background_plot" = area(1,1,297,297))))+
+                                             plot_annotation(theme = theme(plot.background = element_rect(colour = "black"),
+                                                                           plot.margin = margin(0,0,0,0),
+                                                                           margins = margin(0,0,0,0))))
     
     ## reactive
     Remove_Buttons_Clicked <- reactive({
@@ -56,10 +67,6 @@ mod_combine_plot_server <- function(id){
     Update_Buttons_Clicked <- reactive({
       req(Update_Button_List(),Update_Button_Pre_State())
       Update_Button_Pre_State() == Update_Button_List()
-    })
-    
-    Chosed_Plots <- reactive({
-      input$choose_subplots
     })
     
     Plots_Information <- reactive({
@@ -121,15 +128,9 @@ mod_combine_plot_server <- function(id){
       
     })
     
-    Add_Subplots <- reactive({
-      input$add_subplots
-    })
-    
-    Combined_Plot_Main <- reactive({
-      
-    })
-    
     ## observe
+    
+    ####
     observe({
       Remove_Times(sum(Remove_Button_List()))
     })
@@ -137,6 +138,7 @@ mod_combine_plot_server <- function(id){
     observe({
       Update_Times(sum(Update_Button_List()))
     })
+    ####
     
     observe({
       
@@ -162,14 +164,10 @@ mod_combine_plot_server <- function(id){
       if (nrow(Plots_Information()) != length(Update_Button_Pre_State())) {
         invalidateLater(100)
       }
-
+      
     })
     
     ## observeEvent
-    observeEvent(eventExpr = Add_Subplots(),
-                 handlerExpr = {
-                   Add_Times(Add_Times()+Add_Subplots())
-                 })
     
     observeEvent(eventExpr = input$upload_files,
                  handlerExpr = {
@@ -226,9 +224,9 @@ mod_combine_plot_server <- function(id){
                    
                  })
     
-    observeEvent(eventExpr = Chosed_Plots(),
+    observeEvent(eventExpr = input$choose_subplots,
                  handlerExpr = {
-                   if (length(Chosed_Plots()) != 0) {
+                   if (length(input$choose_subplots != 0)) {
                      
                      shinyjs::show("add_subplots_button")
                      
@@ -243,6 +241,8 @@ mod_combine_plot_server <- function(id){
     
     observeEvent(eventExpr = input$add_subplots,
                  handlerExpr = {
+                   
+                   Add_Times(Add_Times()+input$add_subplots)
                    # req(Add_Times())
                    
                    # cat("## Add Subplots! \n")
@@ -294,14 +294,21 @@ mod_combine_plot_server <- function(id){
                      selected = NULL
                    )
                    
-                   if (is.null(Loaded_RAM_plots)) {
-                     Loaded_RAM_plots(load_plots_to_RAM(Plots_Information()[Plots_Information()$comb_na %in% Loaded_Subplots()]))
+                   if (is.null(Loaded_RAM_plots())) {
+                     Loaded_RAM_plots(load_plots_to_RAM(Plots_Information()[Plots_Information()$comb_na %in% Loaded_Subplots(),]))
+                     # Loaded_RAM_plots(load_plots_to_RAM(Plots_Information()))
                    }else{
+                     # cat("refresh Loaded_RAM_plots \n")
                      new_comb_na <- setdiff(Loaded_Subplots(),names(Loaded_RAM_plots()))
-                     new_RAM_plots <- load_plots_to_RAM(Plots_Information()[Plots_Information()$comb_na %in% new_comb_na])
-                     Loaded_Subplots(c(Loaded_Subplots(),new_RAM_plots))
+                     
+                     # cat(new_comb_na,"\n")
+                     if (length(new_comb_na) != 0) {
+                       new_RAM_plots <- load_plots_to_RAM(Plots_Information()[Plots_Information()$comb_na %in% new_comb_na,])
+                       Loaded_RAM_plots(c(Loaded_RAM_plots(),new_RAM_plots))
+                     }
+                     
                    }
-                  
+                   
                    # cat("#### Completely! \n")
                    # cat("\n")
                  },
@@ -350,7 +357,7 @@ mod_combine_plot_server <- function(id){
     
     observeEvent(eventExpr = Update_Times(),
                  handlerExpr = {
-
+                   
                    Param_Info_Datatable(update_plot_params(
                      input = input,
                      session = session,
@@ -359,14 +366,14 @@ mod_combine_plot_server <- function(id){
                    ))
                    
                    Update_Button_Pre_State(isolate(Update_Button_List()))
-
+                   
                  })
     
     observeEvent(eventExpr = Plots_Information(),
                  handlerExpr = {
                    req(Plots_Information())
-                   cat("## Initiate Param_Info_Datatable() \n")
-                   cat(colnames(Plots_Information()),"\n")
+                   # cat("## Initiate Param_Info_Datatable() \n")
+                   # cat(colnames(Plots_Information()),"\n")
                    if (is.null(Param_Info_Datatable())) {
                      param_info_df <- Plots_Information()
                      param_info_df$plot_na <- NA
@@ -377,9 +384,9 @@ mod_combine_plot_server <- function(id){
                      param_info_df$loc_right <-NA
                      Param_Info_Datatable(param_info_df)
                      
-                     cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
-                     cat(colnames(Param_Info_Datatable()), "\n")
-                     cat("init \n")
+                     # cat(nrow(Param_Info_Datatable()),":",ncol(Param_Info_Datatable()),"\n")
+                     # cat(colnames(Param_Info_Datatable()), "\n")
+                     # cat("init \n")
                    } else {
                      
                      exist_plt <- as.character(unlist(Param_Info_Datatable()["comb_na"]))
@@ -395,11 +402,11 @@ mod_combine_plot_server <- function(id){
                      param_info_df <- bind_rows(Param_Info_Datatable(),param_info_df)
                      Param_Info_Datatable(param_info_df)
                      
-                     cat(paste((Param_Info_Datatable()["comb_na"]),collapse = " "),"\n")
-                     cat("revise \n")
+                     # cat(paste((Param_Info_Datatable()["comb_na"]),collapse = " "),"\n")
+                     # cat("revise \n")
                    }
                    
-                   cat("#### Complete! \n")
+                   # cat("#### Complete! \n")
                  })
     
     observeEvent(eventExpr = input$upload_param_info_files,
@@ -413,10 +420,75 @@ mod_combine_plot_server <- function(id){
                    shinyjs::hide("lock_param_file_input")
                    shinyjs::show("param_file_input_button")
                  })
+    
+    observeEvent(eventExpr = Param_Info_Datatable(),
+                 handlerExpr = {
+                   req(Param_Info_Datatable())
+                   Area_List(generate_area_list(Param_Info_Datatable()))
+                 })
+    
+    observeEvent(eventExpr = input$refresh_main_comb_plot,
+                 handlerExpr = {
+                   req(Loaded_RAM_plots(),Area_List(),Loaded_Subplots())
+                   
+                   # cat("#### \n refresh main panel \n")
+                   # cat(length(Area_List()[Loaded_Subplots()]),"\n")
+                   # cat(class(Area_List()[Loaded_Subplots()][1]),"\n")
+                   # cat(is.null(Area_List()[Loaded_Subplots()][[1]]),"\n")
+                   # cat(paste0(!is.null(Area_List()[Loaded_Subplots()])),"\n")
+                   
+                   null_counts <- 0
+                   for (subplot in Loaded_Subplots()) {
+                     if (is.null(Area_List()[[subplot]])) {
+                       null_counts <- null_counts+1
+                     }
+                   }
+                   
+                   # cat("null counts: ",null_counts,"\n")
+                   
+                   if (null_counts == 0) {
+                     
+                     comb_plot <- wrap_plots(c(list("plot_spacer" = plot_spacer()),
+                                               Loaded_RAM_plots()[Loaded_Subplots()]),
+                                             design = do.call(c,c(list("plot_spacer" = area(1,1,297,297)),
+                                                                  Area_List()[Loaded_Subplots()]))) +
+                       plot_annotation(theme = theme(plot.background = element_rect(colour = "black"),
+                                                     plot.margin = margin(0,0,0,0),
+                                                     margins = margin(0,0,0,0)))
+                     comb_plot_show <- wrap_plots(c(list("plot_spacer" = plot_spacer(),
+                                                         "background_plot" = Background_Plot),
+                                               Loaded_RAM_plots()[Loaded_Subplots()]),
+                                             design = do.call(c,c(list("plot_spacer" = area(1,1,297,297),
+                                                                       "background_plot" = area(1,1,297,297)),
+                                                                  Area_List()[Loaded_Subplots()]))) +
+                       plot_annotation(theme = theme(plot.background = element_rect(colour = "black"),
+                                                     plot.margin = margin(0,0,0,0),
+                                                     margins = margin(0,0,0,0)),
+                                       tag_levels = "a",
+                                       tag_prefix = "(",
+                                       tag_suffix = ")")
+                     Combined_Plot_Main(comb_plot)
+                     Combined_Plot_Main_Show(comb_plot_show)
+                   }
+                   
+                 })
+    
+    observeEvent(eventExpr = Combined_Plot_Main(),
+                 handlerExpr = {
+                   req(Combined_Plot_Main(),Combined_Plot_Main_Show())
+                   ggsave(filename = Main_Plot_Path(),
+                          plot = Combined_Plot_Main_Show(),
+                          device = "png",
+                          width = 297,
+                          height = 297,
+                          units = "mm",
+                          dpi = 300)
+                 })
     ## output
     output$Combined_Plot <- renderImage({
+      req(Combined_Plot_Main())
       list(
-        src = "/home/youngxin/Documents/PangoICH/Graph/background_v2.png",
+        src = Main_Plot_Path(),
         contentType = "image/png",
         width = "100%",
         height = "100%"
@@ -425,10 +497,8 @@ mod_combine_plot_server <- function(id){
     deleteFile = FALSE)
     
     output$Test_Text <- renderText({
-      req(Upload_Files())
-      p1 <- class(Upload_Files())
-      p2 <- colnames(Upload_Files())
-      paste0(p1,"\n",p2,"\n")
+      req(Main_Plot_Path(),Combined_Plot_Main())
+      paste0(Main_Plot_Path(),"\n")
     })
     
     output$Upload_Time <- renderText({
@@ -522,8 +592,22 @@ mod_combine_plot_server <- function(id){
           actionButton(inputId = ns("reload_param_info_files"),
                        label = "Reload")
         ))
-        )
+      )
     })
+    
+    output$Download_Plots <- downloadHandler(
+      filename = "test_main.png",
+      content = function(file){
+        # cat(file,"\n")
+        ggsave(file,
+               plot = Combined_Plot_Main(),
+               dpi = 600,
+               device = "png",
+               width = 297,
+               height = 297,
+               units = "mm")
+      }
+    )
     
   })
 }

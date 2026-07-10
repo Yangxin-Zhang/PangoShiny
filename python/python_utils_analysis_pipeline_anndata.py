@@ -21,9 +21,15 @@ def anndata_pearson_residuals_pango(adata):
   
   return adata
 
-def anndata_leiden_cluster(adata):
+def neighbors_construction(adata):
   
   sc.pp.neighbors(adata, n_pcs=20, use_rep='X_pca',random_state=2026)
+  sq.gr.spatial_neighbors(adata, coord_type="generic", n_neighs=6,n_rings = 2)
+
+  return adata
+
+def anndata_leiden_cluster(adata):
+  
   sc.tl.umap(adata)  
   sc.tl.leiden(adata, resolution=0.5,flavor="igraph")
   
@@ -33,12 +39,11 @@ def anndata_leiden_cluster(adata):
   return adata
 
 def anndata_spatial_leiden_cluster(adata):
-  
-  sq.gr.spatial_neighbors(adata, coord_type="generic", n_neighs=10)
-  
-  adata.obsp["spatial_connectivities"] = sl.distance2connectivity(adata.obsp["spatial_distances"])
-  
+
   sl.spatialleiden(adata,layer_ratio=1.8, directed=(False, True), random_state=2026)
+  adata.obs["spatialleiden"] = adata.obs["spatialleiden"].astype(int)
+
+  return adata
 
 
   

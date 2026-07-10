@@ -21,6 +21,8 @@ mod_transcriptome_analysis_ui <- function(id) {
 #' transcriptome_analysis Server Functions
 #'
 #' @importFrom ggiraph renderGirafe
+#' @import openxlsx
+#' @import magick
 #' @noRd 
 mod_transcriptome_analysis_server <- function(id){
   moduleServer(id, function(input, output, session){
@@ -29,6 +31,7 @@ mod_transcriptome_analysis_server <- function(id){
     Anndata_Obs <- reactiveVal(NULL)
     Selected_Points <- reactiveVal(NULL)
     Point_Graph_ggplot <- reactiveVal(NULL)
+    GreyScale_Image <- reactiveVal(NULL)
     
     # observeevnt
     
@@ -41,9 +44,36 @@ mod_transcriptome_analysis_server <- function(id){
                    
                    Anndata_Obs(get_h5ad_obs(File_Path = input$h5ad_file_path))
                    
-                   cat("File Path: ",input$h5ad_file_path,"\n")
-                   cat(class(Anndata_Obs()),"\n")
-                   cat(paste(colnames(Anndata_Obs()),collapse = " "),"\n")
+                   # cat("File Path: ",input$h5ad_file_path,"\n")
+                   # cat(class(Anndata_Obs()),"\n")
+                   # cat(paste(colnames(Anndata_Obs()),collapse = " "),"\n")
+                   
+                 })
+    
+    observeEvent(eventExpr = input$greyscale_image,
+                 handlerExpr = {
+                   req(input$greyscale_image)
+                   
+                   shinyjs::hide("upload_greyscale_image_js")
+                   shinyjs::show("reload_greyscale_image_js")
+                   
+                   img_mat <- image_read(input$greyscale_image$datapath) %>%
+                     image_data() %>%
+                     as.integer()
+                   
+                   GreyScale_Image(img_mat[,,1])
+                   
+                   # cat(ncol(GreyScale_Image()),"\n")
+                   # cat(nrow(GreyScale_Image()),"\n")
+                   # cat(GreyScale_Image()[1,1],"\n")
+                   
+                 })
+    
+    observeEvent(eventExpr = input$reload_greyscale_image,
+                 handlerExpr = {
+                   
+                   shinyjs::hide("reload_greyscale_image_js")
+                   shinyjs::show("upload_greyscale_image_js")
                    
                  })
     
@@ -64,26 +94,28 @@ mod_transcriptome_analysis_server <- function(id){
                    # cat(length(Anndata_Obs()$barcode),"\n")
                    # cat(length(input$Point_Graph_selected),"\n")
                    # cat(length(Anndata_Obs()$barcode %in% input$Point_Graph_selected),"\n")
-                   cat("update selected points \n")
+                   # cat("update selected points \n")
                    
                  })
     
-    observeEvent(eventExpr = Anndata_Obs(),
+    observeEvent(eventExpr = input$load_plot,
                  handlerExpr = {
                    req(Anndata_Obs())
                    
-                   Point_Graph_ggplot(transcriptome_point_plot(plt_dt = Anndata_Obs()))
+                   cat("#### \n")
+                   
+                   Point_Graph_ggplot(transcriptome_point_plot_plotly(plt_dt =  Anndata_Obs()))
                    
                    cat("create point graph \n")
                    
                  })
     # output
-    output$Point_Graph <- renderGirafe({
+    output$Point_Graph <- plotly::renderPlotly({
       req(Point_Graph_ggplot())
       
-      ggiraph_obj <- isolate(Point_Graph_ggplot())
+      plotly_obj <- isolate(Point_Graph_ggplot())
       
-      return(girafe(ggobj = ggiraph_obj))
+      return(plotly_obj)
       
     })
     
@@ -92,7 +124,9 @@ mod_transcriptome_analysis_server <- function(id){
       
       ggiraph_obj <- isolate(Point_Graph_ggplot())
       
-      return(girafe(ggobj = ggiraph_obj))
+      return(girafe(ggobj = ggiraph_obj,
+                    width_svg = 15,
+                    height_svg = 30))
       
     })
     
@@ -100,7 +134,7 @@ mod_transcriptome_analysis_server <- function(id){
       req(Point_Graph_ggplot())
       text1 <- paste0(class(Anndata_Obs()$barcode),"\n")
       # text2 <- paste0(ncol(Selected_Points())," : ",nrow(Selected_Points()),"\n")
-      cat("print brushed points \n")
+      # cat("print brushed points \n")
       return(paste(text1,sep = "\n"))
     })
     
@@ -116,6 +150,12 @@ mod_transcriptome_analysis_server <- function(id){
         card_title("Test Table")
       }
     })
+    
+    output$Download_Selected_Points <- downloadHandler(filename = "selected_points.xlsx",
+                                                       content = function(file){
+                                                         cat(file,"\n")
+                                                         write.xlsx(Selected_Points(), file = file)
+                                                       })
  
   })
 }
