@@ -21,9 +21,28 @@ setMethod(f = "initialize",
           definition = function(.Object,
                                 h5ad_path){
             
-            .Object@h5ad_path <- h5ad_path
-            .Object@adata_obj <- new.env()
-            .Object@adata_obj$Anndata_Pango_Py <- Anndata_Pango_Py(H5ad_Path = .Object@h5ad_path)
+            if (length(h5ad_path) > 1) {
+              
+              .Object@h5ad_path <- h5ad_path
+              if (is.null(names(.Object@h5ad_path))) {
+                
+                names(.Object@h5ad_path) <- paste0("batch_",seq(1,length(.Object@h5ad_path)))
+                
+              }
+              
+              comb_adata <- construct_harmony_anndata_pangor(.Object@h5ad_path)
+              
+              .Object@adata_obj <- new.env()
+              .Object@adata_obj$Anndata_Pango_Py <- Anndata_Pango_Py()
+              .Object@adata_obj$Anndata_Pango_Py$adata_obj <- comb_adata
+              
+            } else {
+              
+              .Object@h5ad_path <- h5ad_path
+              .Object@adata_obj <- new.env()
+              .Object@adata_obj$Anndata_Pango_Py <- Anndata_Pango_Py(H5ad_Path = .Object@h5ad_path)
+              
+            }
             
             return(.Object)
           })
@@ -136,15 +155,21 @@ setMethod(f = "H5ad_Counts_Matrix_Pango",
 #' @export
 
 setGeneric(name = "H5ad_PCA_Pango",
-           def = function(Object){
+           def = function(Object,PCA_Label = NULL){
              standardGeneric("H5ad_PCA_Pango")
            })
 
 setMethod(f = "H5ad_PCA_Pango",
           signature = "AnnData_Pango_R",
-          definition = function(Object){
+          definition = function(Object,PCA_Label = NULL){
+            
             tmp_parquet <- tempfile(fileext = ".parquet")
-            adata_pca <- read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_pca_pango_py(tmp_parquet)) %>%
+            
+            if (is.null(PCA_Label)) {
+              PCA_Label <- "X_pca"
+            }
+            
+            adata_pca <- read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_pca_pango_py(tmp_parquet,PCA_Label)) %>%
               as.data.frame()
             
             rownames(adata_pca) <- unlist(read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_barcode_pango_py(tmp_parquet)))
@@ -267,6 +292,52 @@ setMethod(f = "Spatial_Leiden_Cluster_Pango_R",
           definition = function(Object){
             
             Object@adata_obj$Anndata_Pango_Py$conduct_spatial_leiden_cluster_pango_py()
+            
+            return(Object)
+            
+          })
+
+#' Harmony_Batch_Correction_Pango_R
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "Harmony_Batch_Correction_Pango_R",
+           def = function(Object){
+             standardGeneric("Harmony_Batch_Correction_Pango_R")
+           })
+
+setMethod(f = "Harmony_Batch_Correction_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            Object@adata_obj$Anndata_Pango_Py$conduct_harmony_batch_correction()
+            
+            return(Object)
+            
+          })
+
+#' Spatial_Enhancement_Pango_R
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "Spatial_Enhancement_Pango_R",
+           def = function(Object){
+             standardGeneric("Spatial_Enhancement_Pango_R")
+           })
+
+setMethod(f = "Spatial_Enhancement_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            tmp_file <- tempfile(fileext = ".h5ad")
+            
+            adata_obj <- Object@h5ad_path %>%
+              conduct_spatial_enhance() %>%
+              construct_anndata_from_sce_pangor(tmp_file)
+            
+            Object@adata_obj$Anndata_Pango_Py$adata_obj <- adata_obj
             
             return(Object)
             

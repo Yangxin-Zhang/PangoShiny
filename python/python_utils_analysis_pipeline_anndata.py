@@ -4,14 +4,26 @@
 import scanpy as sc
 import squidpy as sq
 import spatialleiden as sl
+import harmonypy as hm
 from python_utils_general_1 import detect_outliers_onesided
 
 def anndata_qc_pango(adata):
+  
+  sc.pp.filter_cells(adata, min_genes=1)
+  sc.pp.filter_genes(adata, min_counts=1)
   
   mask = (~detect_outliers_onesided(adata.obs['log1p_n_genes_by_counts'])) & \
            (~detect_outliers_onesided(adata.obs['log1p_total_counts']))
   
   adata = adata[mask,:]
+  
+  adata_hvg = sc.experimental.pp.highly_variable_genes(adata,flavor="pearson_residuals", n_top_genes=3000,inplace = False)
+  adata_hvg = adata[:,adata_hvg["highly_variable"]].copy()
+  
+  sc.pp.filter_genes(adata_hvg, min_counts=1)
+  sc.pp.filter_cells(adata_hvg, min_genes=1)
+  
+  adata = adata[adata_hvg.obs_names,:].copy()
   
   return adata
 
@@ -24,7 +36,7 @@ def anndata_pearson_residuals_pango(adata):
 def neighbors_construction(adata):
   
   sc.pp.neighbors(adata, n_pcs=20, use_rep='X_pca',random_state=2026)
-  sq.gr.spatial_neighbors(adata, coord_type="generic", n_neighs=6,n_rings = 2)
+  sq.gr.spatial_neighbors(adata, coord_type="generic", n_neighs=4,n_rings = 2)
 
   return adata
 
@@ -45,7 +57,12 @@ def anndata_spatial_leiden_cluster(adata):
 
   return adata
 
-
+def anndata_harmony_batch_correction(adata):
+  
+  adata.obsm["X_pca_harmony"] = hm.run_harmony(adata.obsm["X_pca"],adata.obs,"batch").Z_corr
+  sc.pp.neighbors(adata, n_pcs=15, use_rep='X_pca_harmony',key_added="neighbors_harmony")
+  
+  return adata
   
   
   

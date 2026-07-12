@@ -23,6 +23,11 @@ def save_anndata_as_h5ad(adata,file_na):
     adata.obs_names = adata.obs_names.astype(object)
     adata.var_names = adata.var_names.astype(object)
     
+    adata.obs.index = adata.obs.index.astype(object)
+    adata.var.index = adata.var.index.astype(object)
+    adata.obs.index.name = None
+    adata.var.index.name = None
+    
     for col in adata.var.select_dtypes(include=['category',"str","string"]).columns:
         adata.var[col] = adata.var[col].astype(object)
 
@@ -38,8 +43,8 @@ def save_anndata_as_h5ad(adata,file_na):
     if os.path.exists(file_na):
       os.remove(file_na)
     
-    adata.write(file_na)
-  
+    adata.write(file_na,convert_strings_to_categoricals=False)
+    
 def tansfer_visium_10x_spatial_matrix(sp_mt):
   
   try:

@@ -6,12 +6,14 @@ import pandas as pd
 
 from python_utils_general_1 import save_anndata_as_h5ad
 from python_utils_analysis_pipeline_anndata import anndata_leiden_cluster,anndata_qc_pango,\
-anndata_pearson_residuals_pango,anndata_spatial_leiden_cluster,neighbors_construction
+anndata_pearson_residuals_pango,anndata_spatial_leiden_cluster,neighbors_construction,\
+anndata_harmony_batch_correction
 
 class Anndata_Pango_Py:
-    def __init__(self,H5ad_Path):
+    def __init__(self,H5ad_Path=None):
         self.h5ad_path = H5ad_Path
-        self.adata_obj = sc.read_h5ad(H5ad_Path,backed="r")
+        if H5ad_Path is not None:
+          self.adata_obj = sc.read_h5ad(H5ad_Path,backed="r")
 
     def get_anndata_obs_pango_py(self,tmp_path):
       
@@ -49,9 +51,9 @@ class Anndata_Pango_Py:
 
       return tmp_path
     
-    def get_anndata_pca_pango_py(self,tmp_path):
+    def get_anndata_pca_pango_py(self,tmp_path,pca_label):
       
-      adata_pca = self.adata_obj.obsm["X_pca"]
+      adata_pca = self.adata_obj.obsm[pca_label]
       adata_pca = pd.DataFrame(adata_pca)
       adata_pca.to_parquet(tmp_path,index = False)
 
@@ -87,7 +89,13 @@ class Anndata_Pango_Py:
       
       return self
     
+    def conduct_harmony_batch_correction(self):
+      
+      self.adata_obj = anndata_harmony_batch_correction(self.adata_obj)
+      
+      return self
+    
     def save_anndata_pango_py(self,file_path):
       
-      save_anndata_as_h5ad(adata = self.adata_obj.to_memory(),file_na = file_path)
+      save_anndata_as_h5ad(adata = self.adata_obj,file_na = file_path)
       
