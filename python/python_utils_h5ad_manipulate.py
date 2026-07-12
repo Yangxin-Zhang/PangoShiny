@@ -8,6 +8,9 @@ import warnings
 import anndata
 import pyarrow.parquet as pq
 import anndata as ad
+import squidpy as sq
+import spatialleiden as sl
+
 # import rpy2.robjects as robjects
 
 from python_utils_general_1 import save_anndata_as_h5ad,tansfer_visium_10x_spatial_matrix
@@ -102,7 +105,10 @@ def construct_anndata_for_harmony(h5ad_path,batch):
   adata_harmony = ad.AnnData(
     obs = pd.DataFrame(
       {
-        "spatialleiden": adata.obs["spatialleiden"] + "_" + batch
+        "spatialleiden": [f"{x}_{batch}" for x in list(adata.obs["spatialleiden"].values)],
+        "batch": batch,
+        "array_row": adata.obsm["spatial"][:,0],
+        "array_col": adata.obsm["spatial"][:,1]
       },
       index = adata.obs.index + "_" + batch
     ),
@@ -110,15 +116,12 @@ def construct_anndata_for_harmony(h5ad_path,batch):
       "X_pca": adata.obsm["X_pca"],
       "spatial": adata.obsm['spatial'],
       "pxl_in_fullres": adata.obsm['pxl_in_fullres']
-    },
-    obsp = {
-      "connectivities": adata.obsp["connectivities"]
-      "spatial_connectivities": adata.obsp["spatial_connectivities"]
     }
   )
   
-  adata_harmony.obs["batch"] = batch
-  
+  # adata_harmony.obsp["connectivities"] = adata.obsp["connectivities"].copy()
+  # adata_harmony.obsp["spatial_connectivities"] = adata.obsp["spatial_connectivities"].copy()
+
   return adata_harmony
 
 def combine_harmony_anndata(adata_ls,file_path,batch):

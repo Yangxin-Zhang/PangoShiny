@@ -5,6 +5,7 @@ import scanpy as sc
 import squidpy as sq
 import spatialleiden as sl
 import harmonypy as hm
+import pandas as pd
 from python_utils_general_1 import detect_outliers_onesided
 
 def anndata_qc_pango(adata):
@@ -60,9 +61,32 @@ def anndata_spatial_leiden_cluster(adata):
 def anndata_harmony_batch_correction(adata):
   
   adata.obsm["X_pca_harmony"] = hm.run_harmony(adata.obsm["X_pca"],adata.obs,"batch").Z_corr
+  
   sc.pp.neighbors(adata, n_pcs=15, use_rep='X_pca_harmony',key_added="neighbors_harmony")
+  sc.tl.umap(adata,neighbors_key="neighbors_harmony",key_added="X_umap_harmony")
+  sc.tl.leiden(adata, resolution=0.5,flavor="igraph",key_added="leiden_harmony",neighbors_key="neighbors_harmony")
   
   return adata
+
+def establish_contrast_cluster(adata,aim_cluster,contrast_batch,cluster_symbol="spatialleiden",interval_cluster="leiden_harmony"):
+  
+  harmony_clusters = adata.obs[adata.obs[cluster_symbol].isin(aim_cluster)][interval_cluster].unique()
+  
+  sum_leiden = {}
+  for j in range(len(contrast_batch)):
+    
+    sm_le = []
+    for i in range(len(harmony_clusters)):
+      sm_le.append(((adata.obs[interval_cluster] == harmony_clusters[i])&(adata.obs[cluster_symbol].isin(aim_cluster))&(adata.obs["batch"] == contrast_batch[j])).sum())
+    
+    sum_leiden[contrast_batch[j]] = sm_le
+  
+  sum_df = pd.DataFrame(
+    sum_leiden,
+    index = harmony_clusters
+  )
+
+  return sum_df
   
   
   
