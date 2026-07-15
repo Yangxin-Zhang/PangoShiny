@@ -223,17 +223,20 @@ setMethod(f = "Save_AnnData_Pango_R",
 #' @export
 
 setGeneric(name = "Quality_Control_Pango_R",
-           def = function(Object){
+           def = function(Object,plotting_dataset_path=NULL){
              standardGeneric("Quality_Control_Pango_R")
            })
 
 setMethod(f = "Quality_Control_Pango_R",
           signature = "AnnData_Pango_R",
-          definition = function(Object){
+          definition = function(Object,plotting_dataset_path=NULL){
             
-            Object@adata_obj$Anndata_Pango_Py$conduct_qc_pango_py()
-            
-            return(Object)
+            if (is.null(plotting_dataset_path)) {
+              Object@adata_obj$Anndata_Pango_Py$conduct_qc_pango_py()
+              return(Object)
+            }else{
+              return(Object@adata_obj$Anndata_Pango_Py$conduct_qc_pango_py(plotting_dataset_path))
+            }
             
           })
 
@@ -338,6 +341,26 @@ setMethod(f = "Spatial_Enhancement_Pango_R",
               construct_anndata_from_sce_pangor(tmp_file)
             
             Object@adata_obj$Anndata_Pango_Py$adata_obj <- adata_obj
+            
+            return(Object)
+            
+          })
+
+#' DEG_Analysis_Pango_R
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "DEG_Analysis_Pango_R",
+           def = function(Object){
+             standardGeneric("DEG_Analysis_Pango_R")
+           })
+
+setMethod(f = "DEG_Analysis_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            Object@adata_obj$Anndata_Pango_Py$conduct_DEG_analysis_pango_py()
             
             return(Object)
             

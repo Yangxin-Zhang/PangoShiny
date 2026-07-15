@@ -7,7 +7,7 @@ import pandas as pd
 from python_utils_general_1 import save_anndata_as_h5ad
 from python_utils_analysis_pipeline_anndata import anndata_leiden_cluster,anndata_qc_pango,\
 anndata_pearson_residuals_pango,anndata_spatial_leiden_cluster,neighbors_construction,\
-anndata_harmony_batch_correction
+anndata_harmony_batch_correction,anndata_DEG_analysis
 
 class Anndata_Pango_Py:
     def __init__(self,H5ad_Path=None):
@@ -59,9 +59,12 @@ class Anndata_Pango_Py:
 
       return tmp_path
     
-    def conduct_qc_pango_py(self):
+    def conduct_qc_pango_py(self,plotting_dataset_path=None):
       
-      self.adata_obj = anndata_qc_pango(adata = self.adata_obj.to_memory())
+      if plotting_dataset_path is not None:
+        return anndata_qc_pango(adata = self.adata_obj.to_memory(),plotting_dataset_path = plotting_dataset_path)
+      else:
+        self.adata_obj = anndata_qc_pango(adata = self.adata_obj.to_memory())
 
       return self
     
@@ -86,6 +89,12 @@ class Anndata_Pango_Py:
     def conduct_spatial_leiden_cluster_pango_py(self):
       
       self.adata_obj = anndata_spatial_leiden_cluster(adata = self.adata_obj.to_memory())
+      
+      return self
+    
+    def conduct_DEG_analysis_pango_py(self):
+      
+      self.adata_obj = anndata_DEG_analysis(adata = self.adata_obj.to_memory())
       
       return self
     
