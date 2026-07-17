@@ -7,7 +7,7 @@ import pandas as pd
 from python_utils_general_1 import save_anndata_as_h5ad
 from python_utils_analysis_pipeline_anndata import anndata_leiden_cluster,anndata_qc_pango,\
 anndata_pearson_residuals_pango,anndata_spatial_leiden_cluster,neighbors_construction,\
-anndata_harmony_batch_correction,anndata_DEG_analysis
+anndata_harmony_batch_correction,anndata_DEG_analysis,anndata_enrich_analysis
 
 class Anndata_Pango_Py:
     def __init__(self,H5ad_Path=None):
@@ -59,6 +59,14 @@ class Anndata_Pango_Py:
 
       return tmp_path
     
+    def get_anndata_obsm_pango_py(self,tmp_path,obsm_label):
+      
+      adata_obsm = self.adata_obj.obsm[obsm_label]
+      adata_obsm = pd.DataFrame(adata_obsm)
+      adata_obsm.to_parquet(tmp_path,index = False)
+
+      return tmp_path
+    
     def conduct_qc_pango_py(self,plotting_dataset_path=None):
       
       if plotting_dataset_path is not None:
@@ -95,6 +103,12 @@ class Anndata_Pango_Py:
     def conduct_DEG_analysis_pango_py(self):
       
       self.adata_obj = anndata_DEG_analysis(adata = self.adata_obj.to_memory())
+      
+      return self
+    
+    def conduct_enrich_analysis_pango_py(self):
+      
+      self.adata_obj = anndata_enrich_analysis(adata = self.adata_obj.to_memory())
       
       return self
     

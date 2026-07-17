@@ -7,21 +7,23 @@ import spatialleiden as sl
 import harmonypy as hm
 import pandas as pd
 import gseapy as gp
-from python_utils_general_1 import detect_outliers_onesided
+from python_utils_general_1 import detect_outliers_onesided,transfer_dataframe_dtype
 
 def anndata_qc_pango(adata,plotting_dataset_path=None):
   
   if plotting_dataset_path is not None:
     raw_path = f"{plotting_dataset_path}/raw_obs.parquet"
     adata.obs.to_parquet(raw_path)
-    
+  
+  adata.uns["before_qc_obs"] = transfer_dataframe_dtype(adata.obs.copy())
+  
   sc.pp.filter_cells(adata, min_genes=1)
   sc.pp.filter_genes(adata, min_counts=1)
   
   mask = (~detect_outliers_onesided(adata.obs['log1p_n_genes_by_counts'])) & \
              (~detect_outliers_onesided(adata.obs['log1p_total_counts']))
   
-  adata = adata[mask,:]
+  adata = adata[mask,:].copy()
   
   adata_hvg = sc.experimental.pp.highly_variable_genes(adata,flavor="pearson_residuals", n_top_genes=3000,inplace = False)
   adata_hvg = adata[:,adata_hvg["highly_variable"]].copy()
@@ -31,20 +33,18 @@ def anndata_qc_pango(adata,plotting_dataset_path=None):
   
   adata = adata[adata_hvg.obs_names,:].copy()
   
-  if plotting_dataset_path is not None:
-    sc.pp.calculate_qc_metrics(adata = adata,
-                               percent_top=None,
-                               log1p=True,
-                               inplace=True)
-    qc_path = f"{plotting_dataset_path}/qc_obs.parquet"
-    adata.obs.to_parquet(qc_path)
-    return [raw_path,qc_path]
-  else:
-    return adata
+  sc.pp.calculate_qc_metrics(adata = adata,
+                             percent_top=None,
+                             log1p=True,
+                             inplace=True)
+                               
+  return adata
 
 def anndata_pearson_residuals_pango(adata):
   
   sc.experimental.pp.recipe_pearson_residuals(adata,n_top_genes=3000,n_comps=50)
+  
+  adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index = adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index.astype(object)
   
   return adata
 
@@ -69,7 +69,6 @@ def anndata_spatial_leiden_cluster(adata):
 
   sc.tl.umap(adata)  
   sl.spatialleiden(adata,layer_ratio=1.8, directed=(False, True), random_state=2026)
-  adata.obs["spatialleiden"] = adata.obs["spatialleiden"].astype(int)
 
   return adata
 
@@ -84,7 +83,7 @@ def anndata_enrich_analysis(adata):
     sc.pp.filter_genes(ad_obj,min_cells=3)
     
     marker_df = ad_obj.uns["marker_genes"]
-    marker_df = marker_df[((marker_df["group"] == str(i))&(marker_df["logfoldchanges"] >= 1))]
+    marker_df = marker_df[((marker_df["group"].astype(str) == str(i))&(marker_df["logfoldchanges"] >= 1))]
     
     gene_set_enrich = gp.enrichr(gene_list=marker_df["names"],
                                  gene_sets=["GO_Biological_Process_2026","GO_Cellular_Component_2026","GO_Molecular_Function_2026","KEGG_2026","WikiPathways_2024_Mouse"],
@@ -97,12 +96,20 @@ def anndata_enrich_analysis(adata):
   
   combined_enrich_dic = pd.concat(enrich_dic.values(), ignore_index=True)
   
+  for col in combined_enrich_dic.select_dtypes(exclude=['number',"bool","category"]).columns:
+    combined_enrich_dic[col] = combined_enrich_dic[col].astype(object)
+  
+  for col in combined_enrich_dic.select_dtypes(include=["category"]).columns:
+        if combined_enrich_dic[col].cat.categories.dtype == "string":
+          combined_enrich_dic[col] = combined_enrich_dic[col].astype(object)
+          
   adata.uns["gene_set_enrichment"] = combined_enrich_dic
   
   return adata
   
 def anndata_DEG_analysis(adata):
   
+  adata.X = adata.layers["counts"]
   adata.obs["spatialleiden"] = adata.obs["spatialleiden"].astype("category")
   sc.pp.normalize_total(adata,target_sum=1e4)
   sc.pp.log1p(adata)
@@ -110,8 +117,15 @@ def anndata_DEG_analysis(adata):
 
   marker_df = sc.get.rank_genes_groups_df(adata,group=None)
   
+  for col in marker_df.select_dtypes(exclude=['number',"bool","category"]).columns:
+    marker_df[col] = marker_df[col].astype(object)
+
+  for col in marker_df.select_dtypes(include=["category"]).columns:
+        if marker_df[col].cat.categories.dtype == "string":
+          marker_df[col] = marker_df[col].astype(object)
+          
   adata.uns["marker_genes"] = marker_df
-  
+
   return adata
 
 def anndata_harmony_batch_correction(adata):

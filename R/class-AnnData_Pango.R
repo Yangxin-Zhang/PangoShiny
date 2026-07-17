@@ -177,6 +177,30 @@ setMethod(f = "H5ad_PCA_Pango",
             return(adata_pca)
           })
 
+#' H5ad_Obsm_Pango
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "H5ad_Obsm_Pango",
+           def = function(Object,obsm_label){
+             standardGeneric("H5ad_Obsm_Pango")
+           })
+
+setMethod(f = "H5ad_Obsm_Pango",
+          signature = "AnnData_Pango_R",
+          definition = function(Object,obsm_label){
+            
+            tmp_parquet <- tempfile(fileext = ".parquet")
+            
+            adata_obsm <- read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_obsm_pango_py(tmp_parquet,obsm_label)) %>%
+              as.data.frame()
+            
+            adata_obsm$barcode <- unlist(read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_barcode_pango_py(tmp_parquet)))
+            
+            return(adata_obsm)
+          })
+
 #' Initialize_AnnData_Pango_R
 #' 
 #' @noRd
@@ -363,5 +387,57 @@ setMethod(f = "DEG_Analysis_Pango_R",
             Object@adata_obj$Anndata_Pango_Py$conduct_DEG_analysis_pango_py()
             
             return(Object)
+            
+          })
+
+#' Enrich_Analysis_Pango_R
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "Enrich_Analysis_Pango_R",
+           def = function(Object){
+             standardGeneric("Enrich_Analysis_Pango_R")
+           })
+
+setMethod(f = "Enrich_Analysis_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            Object@adata_obj$Anndata_Pango_Py$conduct_enrich_analysis_pango_py()
+            
+            return(Object)
+            
+          })
+
+#' UMAP_Plot_Pango_R
+#' 
+#' @noRd
+#' @import dplyr ggplot2
+#' @export
+
+setGeneric(name = "UMAP_Plot_Pango_R",
+           def = function(Object){
+             standardGeneric("UMAP_Plot_Pango_R")
+           })
+
+setMethod(f = "UMAP_Plot_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            adata_obs <- H5ad_Obs_Pango(Object)
+            adata_umap <- H5ad_Obsm_Pango(Object,"X_umap")
+            colnames(adata_umap) <- c("umap_1","umap_2","barcode")
+            plt_dataset <- left_join(adata_umap,adata_obs,by = "barcode")
+            
+            plt <- ggplot() +
+              geom_point(data = plt_dataset,
+                         mapping = aes(x = umap_1,
+                                       y = umap_2,
+                                       colour = as.factor(spatialleiden)),
+                         size = 0.01) +
+              theme_publish_pango_r()
+            
+            return(plt)
             
           })

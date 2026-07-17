@@ -28,15 +28,22 @@ def save_anndata_as_h5ad(adata,file_na):
     adata.obs.index.name = None
     adata.var.index.name = None
     
-    for col in adata.var.select_dtypes(include=['category',"str","string"]).columns:
+    for col in adata.var.select_dtypes(exclude=['number',"bool","category"]).columns:
         adata.var[col] = adata.var[col].astype(object)
 
-    for col in adata.obs.select_dtypes(include=['category',"str","string"]).columns:
+    for col in adata.var.select_dtypes(include=["category"]).columns:
+        if adata.var[col].cat.categories.dtype == "string":
+          adata.var[col] = adata.var[col].astype(object)
+
+    for col in adata.obs.select_dtypes(exclude=['number',"bool","category"]).columns:
         adata.obs[col] = adata.obs[col].astype(object)
     
+    for col in adata.obs.select_dtypes(include=["category"]).columns:
+        if adata.obs[col].cat.categories.dtype == "string":
+          adata.obs[col] = adata.obs[col].astype(object)
+    
     try:
-      adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index = \
-      adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index.astype(object)
+      adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index = adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index.astype(object)
     except:
       pass
     
@@ -80,4 +87,15 @@ def tansfer_visium_10x_spatial_matrix(sp_mt):
 def map_vector_to_greyscale(data):
   
   return MinMaxScaler(feature_range=(0,255)).fit_transform(data).astype("int64")
+
+def transfer_dataframe_dtype(dataframe):
   
+  for col in dataframe.select_dtypes(exclude=['number',"bool","category"]).columns:
+        dataframe[col] = dataframe[col].astype(object)
+
+  for col in dataframe.select_dtypes(include=["category"]).columns:
+        if dataframe[col].cat.categories.dtype == "string":
+          dataframe[col] = dataframe[col].astype(object)
+  
+  return dataframe
+          

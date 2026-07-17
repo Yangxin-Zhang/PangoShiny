@@ -71,8 +71,9 @@ def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
     H5ad_File_Name = Expression_Matrix_H5.split("/")[-1].split(".")[0]+"."+"h5ad"
 
     save_anndata_as_h5ad(adata = adata,file_na = (File_Path+"/"+H5ad_File_Name))
-    
+
     return (File_Path+"/"+H5ad_File_Name)
+    # return adata
 
 def construct_H5ad_from_sce(sce_obs,sce_pca,sce_spatial,file_path):
   
