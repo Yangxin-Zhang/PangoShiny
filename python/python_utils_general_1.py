@@ -3,6 +3,7 @@
 
 import numpy as np
 import os
+import pandas as pd
 from sklearn.preprocessing import  MinMaxScaler
 
 def detect_outliers_onesided(data, side='both', threshold=3.5):
@@ -23,29 +24,17 @@ def save_anndata_as_h5ad(adata,file_na):
     adata.obs_names = adata.obs_names.astype(object)
     adata.var_names = adata.var_names.astype(object)
     
-    adata.obs.index = adata.obs.index.astype(object)
-    adata.var.index = adata.var.index.astype(object)
-    adata.obs.index.name = None
-    adata.var.index.name = None
-    
-    for col in adata.var.select_dtypes(exclude=['number',"bool","category"]).columns:
-        adata.var[col] = adata.var[col].astype(object)
-
-    for col in adata.var.select_dtypes(include=["category"]).columns:
-        if adata.var[col].cat.categories.dtype == "string":
-          adata.var[col] = adata.var[col].astype(object)
-
-    for col in adata.obs.select_dtypes(exclude=['number',"bool","category"]).columns:
-        adata.obs[col] = adata.obs[col].astype(object)
-    
-    for col in adata.obs.select_dtypes(include=["category"]).columns:
-        if adata.obs[col].cat.categories.dtype == "string":
-          adata.obs[col] = adata.obs[col].astype(object)
+    adata.obs = transfer_dataframe_dtype(adata.obs)
+    adata.var = transfer_dataframe_dtype(adata.var)
     
     try:
       adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index = adata.uns["pearson_residuals_normalization"]["pearson_residuals_df"].index.astype(object)
     except:
       pass
+    
+    for key,value in adata.uns.items():
+      if isinstance(value,pd.DataFrame):
+        adata.uns[key] = transfer_dataframe_dtype(value)
     
     if os.path.exists(file_na):
       os.remove(file_na)
@@ -89,6 +78,18 @@ def map_vector_to_greyscale(data):
   return MinMaxScaler(feature_range=(0,255)).fit_transform(data).astype("int64")
 
 def transfer_dataframe_dtype(dataframe):
+  
+  for col in dataframe.columns[dataframe.isna().any()].tolist():
+    if pd.api.types.is_string_dtype(dataframe[col]):
+      dataframe[col] = dataframe[col].fillna("None")
+  
+  try:
+    if not pd.api.types.is_any_real_numeric_dtype(dataframe.index):
+      dataframe.index = dataframe.index.astype(object)
+  except:
+    pass
+  
+  dataframe.index.name = None
   
   for col in dataframe.select_dtypes(exclude=['number',"bool","category"]).columns:
         dataframe[col] = dataframe[col].astype(object)

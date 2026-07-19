@@ -9,11 +9,7 @@ import pandas as pd
 import gseapy as gp
 from python_utils_general_1 import detect_outliers_onesided,transfer_dataframe_dtype
 
-def anndata_qc_pango(adata,plotting_dataset_path=None):
-  
-  if plotting_dataset_path is not None:
-    raw_path = f"{plotting_dataset_path}/raw_obs.parquet"
-    adata.obs.to_parquet(raw_path)
+def anndata_qc_pango(adata):
   
   adata.uns["before_qc_obs"] = transfer_dataframe_dtype(adata.obs.copy())
   
@@ -51,24 +47,20 @@ def anndata_pearson_residuals_pango(adata):
 def neighbors_construction(adata):
   
   sc.pp.neighbors(adata, n_pcs=20, use_rep='X_pca',random_state=2026)
+  sc.tl.umap(adata,neighbors_key="neighbors")
   sq.gr.spatial_neighbors(adata, coord_type="generic", n_neighs=4,n_rings = 2)
 
   return adata
 
 def anndata_leiden_cluster(adata):
   
-  sc.tl.umap(adata)  
   sc.tl.leiden(adata, resolution=0.5,flavor="igraph")
-  
-  adata.obs["umap_1"] = adata.obsm["X_umap"][:,0]
-  adata.obs["umap_2"] = adata.obsm["X_umap"][:,1]
 
   return adata
 
 def anndata_spatial_leiden_cluster(adata):
 
-  sc.tl.umap(adata)  
-  sl.spatialleiden(adata,layer_ratio=1.8, directed=(False, True), random_state=2026)
+  sl.spatialleiden(adata,random_state=2026,latent_neighbors_key="connectivities",spatial_neighbors_key="spatial_connectivities")
 
   return adata
 
@@ -109,21 +101,14 @@ def anndata_enrich_analysis(adata):
   
 def anndata_DEG_analysis(adata):
   
-  adata.X = adata.layers["counts"]
+  adata.X = adata.layers["counts"].copy()
   adata.obs["spatialleiden"] = adata.obs["spatialleiden"].astype("category")
   sc.pp.normalize_total(adata,target_sum=1e4)
   sc.pp.log1p(adata)
   sc.tl.rank_genes_groups(adata,groupby="spatialleiden",method="wilcoxon")
 
-  marker_df = sc.get.rank_genes_groups_df(adata,group=None)
+  marker_df = transfer_dataframe_dtype(sc.get.rank_genes_groups_df(adata,group=None))
   
-  for col in marker_df.select_dtypes(exclude=['number',"bool","category"]).columns:
-    marker_df[col] = marker_df[col].astype(object)
-
-  for col in marker_df.select_dtypes(include=["category"]).columns:
-        if marker_df[col].cat.categories.dtype == "string":
-          marker_df[col] = marker_df[col].astype(object)
-          
   adata.uns["marker_genes"] = marker_df
 
   return adata

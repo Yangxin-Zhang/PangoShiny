@@ -4,6 +4,7 @@
 import scanpy as sc
 import pandas as pd
 
+from python_utils_h5ad_manipulate import write_dataframe_to_anndata_uns
 from python_utils_general_1 import save_anndata_as_h5ad
 from python_utils_analysis_pipeline_anndata import anndata_leiden_cluster,anndata_qc_pango,\
 anndata_pearson_residuals_pango,anndata_spatial_leiden_cluster,neighbors_construction,\
@@ -30,6 +31,12 @@ class Anndata_Pango_Py:
       adata_var.to_parquet(tmp_path,index = False)
       
       return tmp_path
+    
+    def get_anndata_var_names_pango_py(self):
+      
+      adata_var_names = list(self.adata_obj.var_names)
+      
+      return adata_var_names
     
     def get_anndata_counts_pango_py(self):
       
@@ -67,12 +74,27 @@ class Anndata_Pango_Py:
 
       return tmp_path
     
-    def conduct_qc_pango_py(self,plotting_dataset_path=None):
+    def get_anndata_uns_dataframe_pango_py(self,tmp_path,uns_label):
       
-      if plotting_dataset_path is not None:
-        return anndata_qc_pango(adata = self.adata_obj.to_memory(),plotting_dataset_path = plotting_dataset_path)
+      if isinstance(self.adata_obj.uns[uns_label],pd.DataFrame):
+        adata_uns = self.adata_obj.uns[uns_label]
+        adata_uns.to_parquet(tmp_path,index = False)
+        
+        return tmp_path
+      
       else:
-        self.adata_obj = anndata_qc_pango(adata = self.adata_obj.to_memory())
+        return None
+    
+    def get_anndata_pearson_residuals_df_pango_py(self,tmp_path):
+      
+      adata_per_res = self.adata_obj.uns["pearson_residuals_normalization"]["pearson_residuals_df"]
+      adata_per_res.to_parquet(tmp_path,index = True)
+      
+      return tmp_path
+    
+    def conduct_qc_pango_py(self):
+
+      self.adata_obj = anndata_qc_pango(adata = self.adata_obj.to_memory())
 
       return self
     
@@ -121,4 +143,10 @@ class Anndata_Pango_Py:
     def save_anndata_pango_py(self,file_path):
       
       save_anndata_as_h5ad(adata = self.adata_obj,file_na = file_path)
+      
+    def write_dataframe_to_uns_pango_py(self,file_path,label):
+      
+      self.adata_obj = write_dataframe_to_anndata_uns(self.adata_obj,file_path,label)
+      
+      return self
       

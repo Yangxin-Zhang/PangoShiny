@@ -12,8 +12,7 @@ import squidpy as sq
 import spatialleiden as sl
 
 # import rpy2.robjects as robjects
-
-from python_utils_general_1 import save_anndata_as_h5ad,tansfer_visium_10x_spatial_matrix
+from python_utils_general_1 import save_anndata_as_h5ad,tansfer_visium_10x_spatial_matrix,transfer_dataframe_dtype
 
 def Export_As_H5ad_From_10X_H5_Python(Expression_Matrix_H5,
                                       Position_Matrix,
@@ -132,3 +131,11 @@ def combine_harmony_anndata(adata_ls,file_path,batch):
   # save_anndata_as_h5ad(adata = comb_adata,file_na = file_path)
 
   return comb_adata
+
+def write_dataframe_to_anndata_uns(adata,file_path,label):
+  
+  df = transfer_dataframe_dtype(pd.read_parquet(file_path))
+  adata.uns[label] = df
+  
+  return adata
+  

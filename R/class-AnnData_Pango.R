@@ -126,6 +126,26 @@ setMethod(f = "H5ad_Var_Pango",
             return(adata_var)
           })
 
+#' H5ad_Var_Names_Pango
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "H5ad_Var_Names_Pango",
+           def = function(Object){
+             standardGeneric("H5ad_Var_Names_Pango")
+           })
+
+setMethod(f = "H5ad_Var_Names_Pango",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            adata_var_names <- Object@adata_obj$Anndata_Pango_Py$get_anndata_var_names_pango_py()
+            
+            return(adata_var_names)
+            
+          })
+
 #' H5ad_Counts_Matrix_Pango
 #' 
 #' @noRd
@@ -201,6 +221,52 @@ setMethod(f = "H5ad_Obsm_Pango",
             return(adata_obsm)
           })
 
+#' H5ad_Uns_DataFrame_Pango
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "H5ad_Uns_DataFrame_Pango",
+           def = function(Object,uns_label){
+             standardGeneric("H5ad_Uns_DataFrame_Pango")
+           })
+
+setMethod(f = "H5ad_Uns_DataFrame_Pango",
+          signature = "AnnData_Pango_R",
+          definition = function(Object,uns_label){
+            
+            tmp_parquet <- tempfile(fileext = ".parquet")
+            
+            adata_uns <- read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_uns_dataframe_pango_py(tmp_parquet,uns_label)) %>%
+              as.data.frame()
+            
+            return(adata_uns)
+          })
+
+#' H5ad_Pearson_Residuals_Uns_Pango
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "H5ad_Pearson_Residuals_Uns_Pango",
+           def = function(Object){
+             standardGeneric("H5ad_Pearson_Residuals_Uns_Pango")
+           })
+
+setMethod(f = "H5ad_Pearson_Residuals_Uns_Pango",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            tmp_parquet <- tempfile(fileext = ".parquet")
+            
+            adata_uns_pear <- arrow::read_parquet(Object@adata_obj$Anndata_Pango_Py$get_anndata_pearson_residuals_df_pango_py(tmp_parquet)) %>%
+              as.data.frame() %>%
+              tibble::column_to_rownames("__index_level_0__")
+            
+            return(adata_uns_pear)
+            
+          })
+
 #' Initialize_AnnData_Pango_R
 #' 
 #' @noRd
@@ -247,20 +313,17 @@ setMethod(f = "Save_AnnData_Pango_R",
 #' @export
 
 setGeneric(name = "Quality_Control_Pango_R",
-           def = function(Object,plotting_dataset_path=NULL){
+           def = function(Object){
              standardGeneric("Quality_Control_Pango_R")
            })
 
 setMethod(f = "Quality_Control_Pango_R",
           signature = "AnnData_Pango_R",
-          definition = function(Object,plotting_dataset_path=NULL){
+          definition = function(Object){
             
-            if (is.null(plotting_dataset_path)) {
-              Object@adata_obj$Anndata_Pango_Py$conduct_qc_pango_py()
-              return(Object)
-            }else{
-              return(Object@adata_obj$Anndata_Pango_Py$conduct_qc_pango_py(plotting_dataset_path))
-            }
+            Object@adata_obj$Anndata_Pango_Py$conduct_qc_pango_py()
+
+            return(Object)
             
           })
 
@@ -390,21 +453,53 @@ setMethod(f = "DEG_Analysis_Pango_R",
             
           })
 
-#' Enrich_Analysis_Pango_R
+#' GSEA_Analysis_Pango_R
 #' 
 #' @noRd
 #' @export
 
-setGeneric(name = "Enrich_Analysis_Pango_R",
+setGeneric(name = "GSEA_Analysis_Pango_R",
            def = function(Object){
-             standardGeneric("Enrich_Analysis_Pango_R")
+             standardGeneric("GSEA_Analysis_Pango_R")
            })
 
-setMethod(f = "Enrich_Analysis_Pango_R",
+setMethod(f = "GSEA_Analysis_Pango_R",
           signature = "AnnData_Pango_R",
           definition = function(Object){
             
             Object@adata_obj$Anndata_Pango_Py$conduct_enrich_analysis_pango_py()
+            
+            return(Object)
+            
+          })
+
+#' ORA_Analysis_Pango_R
+#' 
+#' @noRd
+#' @export
+
+setGeneric(name = "ORA_Analysis_Pango_R",
+           def = function(Object){
+             standardGeneric("ORA_Analysis_Pango_R")
+           })
+
+setMethod(f = "ORA_Analysis_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            tmp_file_go <- tempfile(fileext = "_go.parquet")
+            tmp_file_wp <- tempfile(fileext = "_wp.parquet")
+            tmp_file_kegg <- tempfile(fileext = "_kegg.parquet")
+            
+            ora_result <- ORA_analysis_pipeline(Object)
+            
+            write_parquet(ora_result[["GO"]],tmp_file_go)
+            write_parquet(ora_result[["WP"]],tmp_file_wp)
+            write_parquet(ora_result[["KEGG"]],tmp_file_kegg)
+            
+            Object@adata_obj$Anndata_Pango_Py$write_dataframe_to_uns_pango_py(tmp_file_go,"GO_ORA_Results")
+            Object@adata_obj$Anndata_Pango_Py$write_dataframe_to_uns_pango_py(tmp_file_wp,"WP_ORA_Results")
+            Object@adata_obj$Anndata_Pango_Py$write_dataframe_to_uns_pango_py(tmp_file_kegg,"KEGG_ORA_Results")
             
             return(Object)
             
@@ -439,5 +534,39 @@ setMethod(f = "UMAP_Plot_Pango_R",
               theme_publish_pango_r()
             
             return(plt)
+            
+          })
+
+#' Violin_Plot_QC_Pango_R
+#' 
+#' @noRd
+#' @import dplyr ggplot2
+#' @export
+
+setGeneric(name = "Violin_Plot_QC_Pango_R",
+           def = function(Object){
+             standardGeneric("Violin_Plot_QC_Pango_R")
+           })
+
+setMethod(f = "Violin_Plot_QC_Pango_R",
+          signature = "AnnData_Pango_R",
+          definition = function(Object){
+            
+            adata_bf_obs <- H5ad_Uns_DataFrame_Pango(Object,"before_qc_obs")
+            adata_bf_obs$batch <- "batch"
+            adata_obs <- H5ad_Obs_Pango(Object)
+            adata_obs$batch <- "batch"
+            
+            vio_plt_bf <- ggplot() +
+              geom_violin(data = adata_bf_obs,
+                          mapping = aes(x = batch,y = log1p_total_counts)) +
+              theme_publish_pango_r()
+            
+            vio_plt <- ggplot() +
+              geom_violin(data = adata_obs,
+                          mapping = aes(x = batch,y = log1p_total_counts)) +
+              theme_publish_pango_r()
+            
+            return(list(vio_plt_bf,vio_plt))
             
           })
